@@ -2,7 +2,7 @@
 
 variable "aws_region" {
   description = "AWS region"
-  default     = "your-region"  # e.g., "eu-west-1"
+  default     = "eu-west-1" 
 }
 
 variable "vpc_cidr" {
@@ -17,20 +17,15 @@ variable "subnet_cidr" {
 
 variable "availability_zone" {
   description = "AWS Availability Zone"
-  default     = "your-region-a"  # e.g., "eu-west-1a"
+  default     = "eu-west-1a" 
 }
 
 variable "ami_id" {
   description = "AMI ID for the EC2 instance"
-  default     = "your-ami-id"  # Replace with actual AMI ID
+  default     = "ami-0df368112825f8d8f" 
 }
 
 variable "instance_type" {
   description = "EC2 instance type"
-  default     = "your-instance-type"  # e.g., "t3.micro"
-}
-
-variable "ssh_key_name" {
-  description = "AWS Key Pair Name"
-  default     = "your-key-name"  # Replace with actual key pair name
+  default     = "t3.micro" 
 }

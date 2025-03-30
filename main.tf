@@ -1,9 +1,8 @@
-# main.tf
-
 provider "aws" {
   region = var.aws_region
 }
 
+# VPC
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
@@ -14,6 +13,7 @@ resource "aws_vpc" "main" {
   }
 }
 
+# Subnet
 resource "aws_subnet" "subnet" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = var.subnet_cidr
@@ -25,6 +25,7 @@ resource "aws_subnet" "subnet" {
   }
 }
 
+# Internet Gateway
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main.id
 
@@ -33,6 +34,7 @@ resource "aws_internet_gateway" "gw" {
   }
 }
 
+# Route Table
 resource "aws_route_table" "route_table" {
   vpc_id = aws_vpc.main.id
 
@@ -42,13 +44,22 @@ resource "aws_route_table" "route_table" {
   }
 }
 
+# Route Table Association
 resource "aws_route_table_association" "rta" {
   subnet_id      = aws_subnet.subnet.id
   route_table_id = aws_route_table.route_table.id
 }
 
-resource "aws_security_group" "sg" {
+# Security Group for Web server Instance
+resource "aws_security_group" "web_sg" {
   vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   ingress {
     from_port   = 80
@@ -70,17 +81,21 @@ resource "aws_security_group" "sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-}
-
-resource "aws_instance" "web" {
-  ami             = var.ami_id
-  instance_type   = var.instance_type
-  subnet_id       = aws_subnet.subnet.id
-  security_groups = [aws_security_group.sg.id]
-  key_name        = var.ssh_key_name
 
   tags = {
-    Name = "web-server"
+    Name = "web-sg"
   }
 }
 
+# Ubuntu EC2 Instance
+resource "aws_instance" "web-server-instance" {
+  ami                    = var.ami_id
+  instance_type          = "t3.micro"
+  key_name               = aws_key_pair.main.key_name
+  subnet_id              = aws_subnet.subnet.id
+  vpc_security_group_ids = [aws_security_group.web_sg.id]
+
+  tags = {
+    Name = "WebserverInstance"
+  }
+}
