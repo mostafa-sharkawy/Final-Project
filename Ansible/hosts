@@ -1,0 +1,2 @@
+[my_ec2]
+WebserverInstance ansible_host=108.130.0.142 ansible_user=ubuntu ansible_ssh_common_args='-o StrictHostKeyChecking=no'
