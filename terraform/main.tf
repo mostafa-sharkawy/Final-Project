@@ -96,6 +96,6 @@ resource "aws_instance" "web-server-instance" {
   vpc_security_group_ids = [aws_security_group.web_sg.id]
 
   tags = {
-    Name = "WebserverInstance"
+    Name = "Web1serverInstance"
   }
 }
