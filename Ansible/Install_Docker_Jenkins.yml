@@ -1,0 +1,108 @@
+---
+- hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Update apt package index
+      apt:
+        update_cache: yes
+
+    # Docker Installation
+    - name: Install required packages to allow apt over HTTPS
+      apt:
+        name: apt-transport-https
+        state: present
+        install_recommends: no
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository to apt sources
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+        update_cache: yes
+
+    - name: Install Docker Compose (if needed)
+      apt:
+        name: docker-compose-plugin
+        state: present
+
+    - name: Add current user to docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    # Jenkins Installation
+    - name: Install Java (required by Jenkins)
+      apt:
+        name: openjdk-17-jre  # Or a later version
+        state: present
+
+    - name: Add Jenkins repository key
+      apt_key:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+        state: present
+
+    - name: Add Jenkins repository to apt sources
+      apt_repository:
+        repo: deb https://pkg.jenkins.io/debian-stable binary/
+        state: present
+
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
+        update_cache: yes
+
+    - name: Start Jenkins service
+      service:
+        name: jenkins
+        state: started
+        enabled: yes
+
+    - name: Wait for Jenkins to start
+      wait_for:
+        port: 8080
+        delay: 10
+        timeout: 300
+        state: started    
+    
+
+    - name: Open Jenkins port (8080) in firewall (if ufw is enabled)
+      ufw:
+        rule: allow
+        port: '8080'
+        proto: tcp
+      ignore_errors: yes
+
+    
+    - name: Get /var/lib/jenkins/secrets/initialAdminPassword
+      command: cat /var/lib/jenkins/secrets/initialAdminPassword
+      register: jenkins_password
+      changed_when: false
+
+    - name: Print Jenkins initial admin password
+      debug:
+        msg: "Jenkins initial admin password: {{ jenkins_password.stdout }}"
+      when: jenkins_password.stdout != ""
+
+    - name: Print Jenkins URL 
+      debug:
+        msg: "Jenkins URL: http://{{ ansible_host }}:8080"
+      when: jenkins_password.stdout != ""
