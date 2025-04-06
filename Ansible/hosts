@@ -1,2 +1,2 @@
-[my_ec2]
-WebserverInstance ansible_host=108.130.0.142 ansible_user=ubuntu ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+[all]
+WebserverInstance ansible_host=3.253.165.201 ansible_user=ubuntu ansible_ssh_private_key_file=/home/mostafa/Final-Project/Ansible/mykey.pem
