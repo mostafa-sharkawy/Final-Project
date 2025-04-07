@@ -31,10 +31,18 @@
         state: present
         update_cache: yes
 
+
+    - name: Install Docker compose
+      apt:
+        name: docker-compose 
+        state: present 
+        become: yes 
+        
     - name: Install Docker Compose (if needed)
       apt:
         name: docker-compose-plugin
         state: present
+        become: yes
 
     - name: Add current user to docker group
       user:
