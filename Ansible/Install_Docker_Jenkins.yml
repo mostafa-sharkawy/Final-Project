@@ -82,7 +82,20 @@
         delay: 10
         timeout: 300
         state: started    
-    
+        
+    - name: Check Jenkins User Groups
+      run: |
+        groups jenkins
+        if ! groups jenkins | grep -q 'docker'; then
+          echo "Jenkins user is not in the docker group. Adding it..."
+          sudo usermod -aG docker jenkins
+          sudo systemctl restart jenkins
+          echo "Jenkins user added to docker group and Jenkins restarted."
+          groups jenkins #verify the change
+        else
+          echo "Jenkins user is already in the docker group."
+        fi
+
 
     - name: Open Jenkins port (8080) in firewall (if ufw is enabled)
       ufw:
