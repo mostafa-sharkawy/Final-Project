@@ -104,5 +104,5 @@
 
     - name: Print Jenkins URL 
       debug:
-        msg: "Jenkins URL: http://{{ ansible_host }}:8080"
+        msg: "Jenkins URL: http://{{ ansible_host }}:8081"
       when: jenkins_password.stdout != ""
