@@ -10,6 +10,6 @@ resource "aws_key_pair" "main" {
 
 resource "local_file" "private_key_pem" {
   content         = tls_private_key.ssh_key.private_key_pem
-  filename        = "${path.module}/mykey.pem"
+  filename        = "${path.module}/Ansible/mykey.pem"
   file_permission = "0400"
 }
