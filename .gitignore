@@ -1,0 +1,6 @@
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+*.pem
+.terraform.lock.hcl
+git
