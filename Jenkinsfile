@@ -36,11 +36,6 @@ pipeline {
             sh 'curl http://localhost:8080'
           }
         }
-        stage('Docker Compose Down') {
-            steps {
-                sh 'docker-compose down'
-            }
-        }
     }
     post {
         always {
