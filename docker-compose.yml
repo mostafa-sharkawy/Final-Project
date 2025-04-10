@@ -1,10 +1,9 @@
-version: '3.8' 
  
 services: 
   db: 
     image: mysql:5.7 
     container_name: mysql_db 
-    restart: always 
+    restart: unless-stopped  # Changed from 'always'
     environment: 
       MYSQL_ROOT_PASSWORD: rootpassword 
       MYSQL_DATABASE: wordpress 
@@ -14,11 +13,16 @@ services:
       - "3306:3306" 
     volumes: 
       - db_data:/var/lib/mysql 
- 
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   wordpress: 
     image: wordpress:latest 
     container_name: wordpress_app 
-    restart: always 
+    restart: unless-stopped  # Changed from 'always'
     depends_on: 
       - db 
     environment: 
@@ -31,6 +35,29 @@ services:
     volumes: 
       - wp_data:/var/www/html 
  
+  wp-cli:
+    image: wordpress:cli
+    container_name: wp_cli
+    depends_on:
+      - wordpress
+    volumes:
+      - wp_data:/var/www/html
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppassword
+      WORDPRESS_DB_NAME: wordpress
+    command: >
+      sh -c '
+        until mysqladmin ping -h"$WORDPRESS_DB_HOST" -u"$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" --silent; do
+          echo "Waiting for MySQL..."
+          sleep 2
+        done
+
+        wp package install wp-cli/wp-cli
+        wp --require=/var/www/html/wp-cli-test-command.php cli info
+        tail -f /dev/null
+      '
 volumes: 
   db_data: 
   wp_data: 
