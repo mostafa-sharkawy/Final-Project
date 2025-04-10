@@ -55,7 +55,12 @@ pipeline {
     post {
         always {
             cleanWs()
+            mail to: 'yyaya85@gmail.com', subject: "Jenkins Build Notification", body: "Build finished."
+        }
+        failure {
+            mail to: 'yyaya85@gmail.com', subject: "Jenkins Build Failed", body: "Build failed."
         }
     }
 }
+
 
