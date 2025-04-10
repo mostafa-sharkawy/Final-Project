@@ -59,7 +59,7 @@ services:
           wp plugin activate your-plugin
         fi
 
-        wp test
+        tail -f /dev/null
       '
 volumes: 
   db_data: 
