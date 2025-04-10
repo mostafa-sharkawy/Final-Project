@@ -51,6 +51,19 @@ pipeline {
                 echo "WP-CLI should have initialized WordPress."
             }
         }
+        stage('Run WP-CLI Tests') {
+            steps {
+                sh '''
+                docker-compose exec -T wp-cli bash -c '
+                  if ! wp core is-installed; then
+                    wp core install --url=http://localhost:8080 --title="Test Site" --admin_user=admin --admin_password=password --admin_email=admin@example.com --skip-email
+                    # Optionally activate plugins or perform other setup
+                  fi
+                  wp test
+                '
+                '''
+            }
+        }
     }
     post {
         always {
