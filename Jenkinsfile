@@ -1,53 +1,20 @@
 pipeline {
-    agent {
-        docker {
-            image 'docker/compose:1.29.2' // Or a more recent version
-            args '-v /var/run/docker.sock:/var/run/docker.sock' // If Jenkins is in a Docker container
-        }
-    }
+    agent any
     stages {
         stage('Docker Compose Up') {
             steps {
                 sh '''
-                cat <<EOF > docker-compose.yml
-version: '3.8'
+                # 1. Force remove specific containers if they exist
+                docker rm -f mysql_db wordpress_app wp_cli 2>/dev/null || true
+                
+                # 2. Full compose down with cleanup
+                docker-compose down --volumes --remove-orphans --timeout 1 2>/dev/null || true
+                
+                # 3. Wait to ensure cleanup completes
+                sleep 2
 
-services:
-  db:
-    image: mysql:5.7
-    container_name: mysql_db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: wordpress
-      MYSQL_USER: wpuser
-      MYSQL_PASSWORD: wppassword
-    ports:
-      - "3306:3306"
-    volumes:
-      - db_data:/var/lib/mysql
-
-  wordpress:
-    image: wordpress:latest
-    container_name: wordpress_app
-    restart: always
-    depends_on:
-      - db
-    environment:
-      WORDPRESS_DB_HOST: db:3306
-      WORDPRESS_DB_USER: wpuser
-      WORDPRESS_DB_PASSWORD: wppassword
-      WORDPRESS_DB_NAME: wordpress
-    ports:
-      - "8085:8080"
-    volumes:
-      - wp_data:/var/www/html
-
-volumes:
-  db_data:
-  wp_data:
-EOF
                 docker-compose up -d
+ 
                 '''
             }
         }
@@ -58,7 +25,7 @@ EOF
                     def attempt = 1
                     while (attempt <= maxAttempts) {
                         try {
-                            sh 'curl http://localhost:8085'
+                            sh 'curl http://localhost:8080'
                             echo "WordPress is ready!"
                             break
                         } catch (Exception e) {
@@ -75,7 +42,7 @@ EOF
         }
         stage('Verify WordPress Page') {
           steps {
-            sh 'curl http://localhost:8085'
+            sh 'curl http://localhost:8080'
           }
         }
     }
@@ -85,3 +52,4 @@ EOF
         }
     }
 }
+
