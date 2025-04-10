@@ -1,9 +1,8 @@
 pipeline {
-    
     agent {
         docker {
             image 'docker/compose:1.29.2' // Or a more recent version
-            args '-v /var/run/docker.sock:/var/run/docker.sock' // if jenkins is in a docker container.
+            args '-v /var/run/docker.sock:/var/run/docker.sock' // If Jenkins is in a Docker container
         }
     }
     stages {
@@ -40,7 +39,7 @@ services:
       WORDPRESS_DB_PASSWORD: wppassword
       WORDPRESS_DB_NAME: wordpress
     ports:
-      - "8080:80"
+      - "8085:8080"
     volumes:
       - wp_data:/var/www/html
 
@@ -59,7 +58,7 @@ EOF
                     def attempt = 1
                     while (attempt <= maxAttempts) {
                         try {
-                            sh 'curl http://localhost:8080'
+                            sh 'curl http://localhost:8085'
                             echo "WordPress is ready!"
                             break
                         } catch (Exception e) {
@@ -76,10 +75,13 @@ EOF
         }
         stage('Verify WordPress Page') {
           steps {
-            sh 'curl http://localhost:8081'
+            sh 'curl http://localhost:8085'
           }
         }
-        
+    }
+    post {
+        always {
+            cleanWs()
         }
-
+    }
 }
