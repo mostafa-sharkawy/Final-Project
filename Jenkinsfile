@@ -47,6 +47,7 @@ pipeline {
         }
         stage('Run WP-CLI Tests') {
             steps {
+                // Run the test after install is confirmed
                 sh 'docker-compose exec -T wp-cli wp test'
             }
         }
