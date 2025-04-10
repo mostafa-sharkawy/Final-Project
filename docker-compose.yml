@@ -13,7 +13,12 @@ services:
       - "3306:3306" 
     volumes: 
       - db_data:/var/lib/mysql 
- 
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   wordpress: 
     image: wordpress:latest 
     container_name: wordpress_app 
@@ -43,10 +48,16 @@ services:
       WORDPRESS_DB_PASSWORD: wppassword
       WORDPRESS_DB_NAME: wordpress
     command: >
-      sh -c 'sleep 10 && 
-      wp core install --url=http://localhost:8080 --title="Test Site" --admin_user=admin --admin_password=password --admin_email=admin@example.com --skip-email &&
-      wp plugin activate your-plugin &&
-      wp test'
+      sh -c '
+        until [ "$$(docker inspect --format="{{.State.Health.Status}}" mysql_db)" = "healthy" ]; do
+          echo "Waiting for MySQL to be healthy..."
+          sleep 2
+        done
+        sleep 5 &&
+        wp core install --url=http://localhost:8080 --title="Test Site" --admin_user=admin --admin_password=password --admin_email=admin@example.com --skip-email &&
+        wp plugin activate your-plugin &&
+        wp test
+      '
 volumes: 
   db_data: 
   wp_data: 
