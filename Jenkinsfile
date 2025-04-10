@@ -76,18 +76,10 @@ EOF
         }
         stage('Verify WordPress Page') {
           steps {
-            sh 'curl http://localhost:8080'
+            sh 'curl http://localhost:8081'
           }
         }
-        stage('Docker Compose Down') {
-            steps {
-                sh 'docker-compose down'
-            }
+        
         }
-    }
-    post {
-        always {
-            cleanWs()
-        }
-    }
+
 }
