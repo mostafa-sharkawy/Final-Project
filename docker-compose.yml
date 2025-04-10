@@ -30,8 +30,40 @@ services:
       - "8080:80" 
     volumes: 
       - wp_data:/var/www/html 
-      - ./wp-cli-test-command.php:/var/www/html/wp-cli-test-command.php
  
+  wordpress: 
+    image: wordpress:latest 
+    container_name: wordpress_app 
+    restart: always 
+    depends_on: 
+      - db 
+    environment: 
+      WORDPRESS_DB_HOST: db:3306 
+      WORDPRESS_DB_USER: wpuser 
+      WORDPRESS_DB_PASSWORD: wppassword 
+      WORDPRESS_DB_NAME: wordpress 
+    ports: 
+      - "8080:80" 
+    volumes: 
+      - wp_data:/var/www/html 
+      - ./wp-cli-test-command.php:/var/www/html/wp-cli-test-command.php
+  wp-cli:
+    image: wordpress:cli
+    container_name: wp_cli
+    depends_on:
+      - wordpress
+    volumes:
+      - wp_data:/var/www/html
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppassword
+      WORDPRESS_DB_NAME: wordpress
+    command: >
+      sh -c 'sleep 10 && 
+      wp core install --url=http://localhost:8080 --title="Test Site" --admin_user=admin --admin_password=password --admin_email=admin@example.com --skip-email &&
+      wp plugin activate your-plugin &&
+      wp test'
 volumes: 
   db_data: 
   wp_data: 

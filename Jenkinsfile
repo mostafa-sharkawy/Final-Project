@@ -36,6 +36,11 @@ pipeline {
             sh 'curl http://localhost:8080'
           }
         }
+        stage('Run WP-CLI Tests') {
+            steps {
+                sh 'docker-compose exec -T wp-cli wp test'
+            }
+        }
     }
     post {
         always {
