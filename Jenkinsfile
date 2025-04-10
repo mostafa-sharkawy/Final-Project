@@ -5,15 +5,15 @@ pipeline {
             steps {
                 sh '''
                 # 1. Force remove specific containers if they exist
-                docker rm -f mysql_db wordpress_app wp_cli 2>/dev/null || true
+                sudo docker rm -f mysql_db wordpress_app wp_cli 2>/dev/null || true
                 
                 # 2. Full compose down with cleanup
-                docker-compose down --volumes --remove-orphans --timeout 1 2>/dev/null || true
+                sudo docker-compose down --volumes --remove-orphans --timeout 1 2>/dev/null || true
                 
                 # 3. Wait to ensure cleanup completes
                 sleep 2
 
-                docker-compose up -d
+                sudo docker-compose up -d
  
                 '''
             }
@@ -25,7 +25,7 @@ pipeline {
                     def attempt = 1
                     while (attempt <= maxAttempts) {
                         try {
-                            sh 'curl http://localhost:8080'
+                            sh 'curl http://localhost:8085'
                             echo "WordPress is ready!"
                             break
                         } catch (Exception e) {
@@ -42,7 +42,7 @@ pipeline {
         }
         stage('Verify WordPress Page') {
           steps {
-            sh 'curl http://localhost:8085'
+            sh 'sudo curl http://localhost:8085'
           }
         }
     }
