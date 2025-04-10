@@ -31,22 +31,6 @@ services:
     volumes: 
       - wp_data:/var/www/html 
  
-  wordpress: 
-    image: wordpress:latest 
-    container_name: wordpress_app 
-    restart: always 
-    depends_on: 
-      - db 
-    environment: 
-      WORDPRESS_DB_HOST: db:3306 
-      WORDPRESS_DB_USER: wpuser 
-      WORDPRESS_DB_PASSWORD: wppassword 
-      WORDPRESS_DB_NAME: wordpress 
-    ports: 
-      - "8080:80" 
-    volumes: 
-      - wp_data:/var/www/html 
-      - ./wp-cli-test-command.php:/var/www/html/wp-cli-test-command.php
   wp-cli:
     image: wordpress:cli
     container_name: wp_cli
