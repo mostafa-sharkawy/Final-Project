@@ -54,11 +54,8 @@ services:
           sleep 2
         done
 
-        if ! wp core is-installed; then
-          wp core install --url=http://localhost:8080 --title="Test Site" --admin_user=admin --admin_password=password --admin_email=admin@example.com --skip-email
-          wp plugin activate your-plugin
-        fi
-
+        wp package install wp-cli/wp-cli
+        wp --require=/var/www/html/wp-cli-test-command.php cli info
         tail -f /dev/null
       '
 volumes: 
