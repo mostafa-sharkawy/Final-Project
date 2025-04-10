@@ -45,10 +45,23 @@ pipeline {
             sh 'curl http://localhost:8080'
           }
         }
+        stage('Wait for WP-CLI Initialization') {
+            steps {
+                sleep time: 30, unit: 'SECONDS' // Adjust the wait time as needed
+                echo "WP-CLI should have initialized WordPress."
+            }
+        }
         stage('Run WP-CLI Tests') {
             steps {
-                // Run the test after install is confirmed
-                sh 'docker-compose exec -T wp-cli wp test'
+                sh '''
+                docker-compose exec -T wp-cli bash -c '
+                  if ! wp core is-installed; then
+                    wp core install --url=http://localhost:8080 --title="Test Site" --admin_user=admin --admin_password=password --admin_email=admin@example.com --skip-email
+                    # Optionally activate plugins or perform other setup
+                  fi
+                  wp test
+                '
+                '''
             }
         }
     }
