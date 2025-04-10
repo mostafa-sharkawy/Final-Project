@@ -49,13 +49,16 @@ services:
       WORDPRESS_DB_NAME: wordpress
     command: >
       sh -c '
-        until [ "$$(docker inspect --format="{{.State.Health.Status}}" mysql_db)" = "healthy" ]; do
-          echo "Waiting for MySQL to be healthy..."
+        until mysqladmin ping -h"$WORDPRESS_DB_HOST" -u"$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" --silent; do
+          echo "Waiting for MySQL..."
           sleep 2
         done
-        sleep 5 &&
-        wp core install --url=http://localhost:8080 --title="Test Site" --admin_user=admin --admin_password=password --admin_email=admin@example.com --skip-email &&
-        wp plugin activate your-plugin &&
+
+        if ! wp core is-installed; then
+          wp core install --url=http://localhost:8080 --title="Test Site" --admin_user=admin --admin_password=password --admin_email=admin@example.com --skip-email
+          wp plugin activate your-plugin
+        fi
+
         wp test
       '
 volumes: 
