@@ -4,7 +4,7 @@ pipeline {
         stage('Docker Compose Up') {
             steps {
                 sh '''
-                docker rm -f mysql_db wordpress_app || true
+                docker rm -f mysql_db wordpress_app wp_cli || true
                 docker-compose up -d
                 '''
             }

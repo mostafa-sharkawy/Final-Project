@@ -17,7 +17,7 @@ services:
   wordpress: 
     image: wordpress:latest 
     container_name: wordpress_app 
-    restart: always 
+    restart: unless-stopped  # Changed from 'always'
     depends_on: 
       - db 
     environment: 
