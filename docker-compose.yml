@@ -30,6 +30,7 @@ services:
       - "8080:80" 
     volumes: 
       - wp_data:/var/www/html 
+      - ./wp-cli-test-command.php:/var/www/html/wp-cli-test-command.php
  
 volumes: 
   db_data: 
