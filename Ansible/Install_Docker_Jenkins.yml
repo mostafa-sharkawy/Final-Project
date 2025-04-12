@@ -31,18 +31,13 @@
         state: present
         update_cache: yes
 
-
-    - name: Install Docker compose
-      apt:
-        name: docker-compose 
-        state: present 
-        become: yes 
-        
-    - name: Install Docker Compose (if needed)
-      apt:
-        name: docker-compose-plugin
-        state: present
-        become: yes
+    - name: Install docker-compose
+      remote_user: ubuntu
+      get_url: 
+        url : https://github.com/docker/compose/releases/download/1.25.1-rc1/docker-compose-Linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        mode: 'u+x,g+x'
+    
 
     - name: Add current user to docker group
       user:
@@ -84,33 +79,34 @@
         state: started
         enabled: yes
 
-    - name: Wait for Jenkins to start
-      wait_for:
-        port: 8081
-        delay: 10
-        timeout: 300
-        state: started    
-        
-    - name: Check Jenkins User Groups
-      run: |
-        groups jenkins
-        if ! groups jenkins | grep -q 'docker'; then
-          echo "Jenkins user is not in the docker group. Adding it..."
-          sudo usermod -aG docker jenkins
-          sudo systemctl restart jenkins
-          echo "Jenkins user added to docker group and Jenkins restarted."
-          groups jenkins #verify the change
-        else
-          echo "Jenkins user is already in the docker group."
-        fi
+   
 
+    - name: add user jenkins in docker group then restart jenkins 
+      user:
+        name: jenkins
+        groups: docker
+        append: yes
+    
+    - name: Restart Jenkins service
+      service:
+        name: jenkins
+        state: restarted
+        enabled: yes
+      
+    - name: Enable ufw
+      ufw:
+        state: enabled
+      ignore_errors: yes
+      become: true
 
     - name: Open Jenkins port (8080) in firewall (if ufw is enabled)
       ufw:
         rule: allow
-        port: '8081'
+        port: '8080'
         proto: tcp
       ignore_errors: yes
+      become: true
+
 
     
     - name: Get /var/lib/jenkins/secrets/initialAdminPassword
@@ -125,5 +121,5 @@
 
     - name: Print Jenkins URL 
       debug:
-        msg: "Jenkins URL: http://{{ ansible_host }}:8081"
+        msg: "Jenkins URL: http://{{ ansible_host }}:8080"
       when: jenkins_password.stdout != ""
