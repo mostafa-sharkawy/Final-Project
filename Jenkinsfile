@@ -51,8 +51,7 @@ pipeline {
                 echo "WP-CLI should have initialized WordPress."
             }
         }
-    }
-        stage('Run WP-CLI Tests') {
+         stage('Run WP-CLI Tests') {
             steps {
                 sh '''
                 docker-compose exec -T wp-cli bash -c '
@@ -63,8 +62,9 @@ pipeline {
                   wp test
                 '
                 '''
-            }   
-  }
+            }
+        }
+    }
     post {
         always {
             cleanWs()
