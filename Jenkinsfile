@@ -52,7 +52,7 @@ pipeline {
 
         stage('Tear Down Test Environment') {
             steps {
-                sh 'docker-compose down -v'
+                sh 'docker-compose down'
             }
         }
         stage('Deploy to Production') {
