@@ -42,7 +42,7 @@ pipeline {
         stage('Run WP-CLI Tests') {
             steps {
                 sh '''
-                docker-compose exec -T bash -c '
+                docker-compose exec -T wp-cli bash -c '
                 wp --require=/var/www/html/wp-cli-test-command.php test
                 '
                 '''
