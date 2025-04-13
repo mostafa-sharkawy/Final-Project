@@ -14,7 +14,6 @@ pipeline {
                 sleep 2
 
                 docker-compose up -d
- 
                 '''
             }
         }
