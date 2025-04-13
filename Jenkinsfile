@@ -6,7 +6,13 @@ pipeline {
                 sh '''
                 # 1. Force remove specific containers if they exist
                 docker rm -f mysql_db wordpress_app wp_cli 2>/dev/null || true
-                                
+                
+                # 2. Full compose down with cleanup
+                # docker-compose down --volumes --remove-orphans --timeout 1 2>/dev/null || true
+                
+                # 3. Wait to ensure cleanup completes
+                sleep 2
+
                 docker-compose up -d
                 '''
             }
@@ -18,7 +24,7 @@ pipeline {
                     def attempt = 1
                     while (attempt <= maxAttempts) {
                         try {
-                            sh 'docker exec wordpress_app curl -s localhost'
+                            sh 'curl http://localhost:8080'
                             echo "WordPress is ready!"
                             break
                         } catch (Exception e) {
@@ -33,43 +39,33 @@ pipeline {
                 }
             }
         }
-        // stage('Wait for WP-CLI Initialization') {
-        //     steps {
-        //         sleep time: 10, unit: 'SECONDS' // Adjust the wait time as needed
-        //         echo "WP-CLI should have initialized WordPress."
-        //     }
-        // }
+        stage('Verify WordPress Page') {
+          steps {
+            sh 'curl http://localhost:8080'
+          }
+        }
+        stage('Wait for WP-CLI Initialization') {
+            steps {
+                sleep time: 10, unit: 'SECONDS' // Adjust the wait time as needed
+                echo "WP-CLI should have initialized WordPress."
+            }
+        }
         stage('Run WP-CLI Tests') {
             steps {
                 sh '''
                 docker-compose exec -T --user=33:33 wp-cli bash -c '
                 wp --require=/var/www/html/wp-cli-test-command.php test
+
+
                 '
                 '''
 
             }
         }
-
-        stage('Tear Down Test Environment') {
+        stage('Remove WP-CLI Container') {
             steps {
-                sh 'docker-compose down'
+                sh 'docker rm -f wp_cli || true'
             }
-        }
-        stage('Deploy to Production') {
-            steps {
-                sh 'docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d'
-            }
-        }
-
-        // stage('Remove WP-CLI Container') {
-        //     steps {
-        //         sh 'docker rm -f wp_cli || true'
-        //     }
-        // }
-        stage('Verify WordPress Page') {
-          steps {
-            sh 'curl http://localhost:8080'
-          }
         }
     }
     post {
