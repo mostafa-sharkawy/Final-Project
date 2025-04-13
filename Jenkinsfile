@@ -1,6 +1,15 @@
 pipeline {
     agent any
     stages {
+        stage('Clean Docker Volumes') {
+            steps {
+                sh '''
+                # Remove volumes explicitly if they exist
+                docker volume rm $(docker volume ls -qf "name=_db_data") || true
+                docker volume rm $(docker volume ls -qf "name=_wp_data") || true
+                '''
+            }
+        }
         stage('Docker Compose Up') {
             steps {
                 sh '''
