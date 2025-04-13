@@ -34,7 +34,12 @@ services:
       - "8080:80" 
     volumes: 
       - wp_data:/var/www/html 
- 
+    entrypoint: >
+      sh -c '
+        chown -R www-data:www-data /var/www/html &&
+        docker-entrypoint.sh apache2-foreground
+      '
+
   wp-cli:
     image: wordpress:cli
     container_name: wp_cli
