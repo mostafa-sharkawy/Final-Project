@@ -47,7 +47,7 @@ pipeline {
         }
         stage('Wait for WP-CLI Initialization') {
             steps {
-                sleep time: 15, unit: 'SECONDS' // Adjust the wait time as needed
+                sleep time: 10, unit: 'SECONDS' // Adjust the wait time as needed
                 echo "WP-CLI should have initialized WordPress."
             }
         }
@@ -55,17 +55,19 @@ pipeline {
             steps {
                 sh '''
                 docker-compose exec -T wp-cli bash -c '
-                # Make sure WordPress is installed
+                # ensure wp-config.php is writable
+                chmod 666 /var/www/html/wp-config.php
                 if ! wp core is-installed; then
-                    wp core install --url=http://localhost:8080 --title="Test Site" --admin_user=admin --admin_password=password --admin_email=admin@example.com --skip-email
+                    wp core install --url=http://localhost:8080 \
+                    --title="Test Site" --admin_user=admin \
+                    --admin_password=password \
+                    --admin_email=admin@example.com --skip-email
                     wp option update siteurl "http://localhost:8080"
                     wp option update home "http://localhost:8080"
                     wp config set WP_DEBUG true --raw
                     wp config set WP_DEBUG_LOG true --raw
                     wp rewrite structure "/%postname%/"
                 fi
-
-                # Run our custom test command with --require
                 wp --require=/var/www/html/wp-cli-test-command.php test
                 '
                 '''
