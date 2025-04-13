@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('MySonarQube') { // Name of your SonarQube server in Jenkins
+                withSonarQubeEnv('MySonarQube2') { // Name of your SonarQube server in Jenkins
                     sh 'sonar-scanner \
                         -Dsonar.projectKey=wordpress_project \
                         -Dsonar.sources=. \
