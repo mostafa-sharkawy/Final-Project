@@ -55,9 +55,6 @@ services:
       WORDPRESS_DB_NAME: wordpress
     command: >
       sh -c '
-        sleep 10
-
-
         # Ensure write access for www-data user
         chown -R 33:33 /var/www/html
         # Make wp-config.php writable
