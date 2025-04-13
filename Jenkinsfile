@@ -1,15 +1,6 @@
 pipeline {
     agent any
     stages {
-        stage('Clean Docker Volumes') {
-            steps {
-                sh '''
-                # Remove volumes explicitly if they exist
-                docker volume rm $(docker volume ls -qf "name=_db_data") || true
-                docker volume rm $(docker volume ls -qf "name=_wp_data") || true
-                '''
-            }
-        }
         stage('Docker Compose Up') {
             steps {
                 sh '''
@@ -17,7 +8,7 @@ pipeline {
                 docker rm -f mysql_db wordpress_app wp_cli 2>/dev/null || true
                 
                 # 2. Full compose down with cleanup
-                docker-compose down --volumes --remove-orphans --timeout 1 2>/dev/null || true
+                # docker-compose down --volumes --remove-orphans --timeout 1 2>/dev/null || true
                 
                 # 3. Wait to ensure cleanup completes
                 sleep 2
