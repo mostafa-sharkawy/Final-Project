@@ -31,10 +31,17 @@ services:
       WORDPRESS_DB_PASSWORD: wppassword 
       WORDPRESS_DB_NAME: wordpress 
     ports: 
-      - "8088:8080" 
+      - "8088:80" 
     volumes: 
       - wp_data:/var/www/html 
- 
+    entrypoint: >
+      sh -c '
+        chown -R www-data:www-data /var/www/html &&
+        find /var/www/html -type d -exec chmod 775 {} \; &&
+        find /var/www/html -type f -exec chmod 664 {} \; &&
+        docker-entrypoint.sh apache2-foreground
+      '
+
   wp-cli:
     image: wordpress:cli
     container_name: wp_cli
@@ -42,6 +49,7 @@ services:
       - wordpress
     volumes:
       - wp_data:/var/www/html
+      - ./wp-cli-test-command.php:/var/www/html/wp-cli-test-command.php  # Add this line
     environment:
       WORDPRESS_DB_HOST: db:3306
       WORDPRESS_DB_USER: wpuser
@@ -49,10 +57,10 @@ services:
       WORDPRESS_DB_NAME: wordpress
     command: >
       sh -c '
-        until mysqladmin ping -h"$WORDPRESS_DB_HOST" -u"$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" --silent; do
-          echo "Waiting for MySQL..."
-          sleep 2
-        done
+        # Ensure write access for www-data user
+        chown -R 33:33 /var/www/html
+        # Make wp-config.php writable
+        chmod 666 /var/www/html/wp-config.php || true
 
         wp package install wp-cli/wp-cli
         wp --require=/var/www/html/wp-cli-test-command.php cli info
