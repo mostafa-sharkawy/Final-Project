@@ -1,7 +1,24 @@
 pipeline {
     agent any
+    tools {
+        sonarQubeScanner 'Mysonarqube' // Name from Global Tool Config
+    }
+    environment {
+        SONARQUBE_ENV = credentials('SONAR_TOKEN2') // Jenkins secret credentials ID
+    }
     stages {
-        stage('Docker Compose Up') {
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('MySonarQube') { // Name of your SonarQube server in Jenkins
+                    sh 'sonar-scanner \
+                        -Dsonar.projectKey=wordpress_project \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=$SONAR_HOST_URL \
+                        -Dsonar.login=$SONARQUBE_ENV'
+                }
+            }
+        }
+        stage('Setup test environment') {
             steps {
                 sh '''
                 # 1. Force remove specific containers if they exist
