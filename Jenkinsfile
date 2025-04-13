@@ -47,7 +47,7 @@ pipeline {
         }
         stage('Wait for WP-CLI Initialization') {
             steps {
-                sleep time: 10, unit: 'SECONDS' // Adjust the wait time as needed
+                sleep time: 5, unit: 'SECONDS' // Adjust the wait time as needed
                 echo "WP-CLI should have initialized WordPress."
             }
         }
