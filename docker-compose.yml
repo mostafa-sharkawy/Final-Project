@@ -50,11 +50,11 @@ services:
       WORDPRESS_DB_NAME: wordpress
     command: >
       sh -c '
-        until mysqladmin ping -h"$WORDPRESS_DB_HOST" -u"$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" --silent; do
-          echo "Waiting for MySQL..."
-          sleep 2
-        done
+        sleep 10
 
+
+        # Ensure write access for www-data user
+        chown -R 33:33 /var/www/html
         # Make wp-config.php writable
         chmod 666 /var/www/html/wp-config.php || true
 
