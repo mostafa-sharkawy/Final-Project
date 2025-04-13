@@ -3,9 +3,6 @@ pipeline {
     environment {
         SONARQUBE_ENV = credentials('SONAR_TOKEN2') // Jenkins secret credentials ID
     }
-    tools {
-        maven 'Mymaven' // Replace 'MAVEN_HOME' with the name of your Maven installation in Jenkins
-    }
     stages {
         stage('SonarQube Analysis') {
             steps {
