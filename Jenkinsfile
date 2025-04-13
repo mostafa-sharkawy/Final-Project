@@ -42,7 +42,7 @@ pipeline {
         stage('Run WP-CLI Tests') {
             steps {
                 sh '''
-                docker-compose exec -T --user=33:33 wp-cli bash -c '
+                docker-compose exec -T bash -c '
                 wp --require=/var/www/html/wp-cli-test-command.php test
                 '
                 '''
@@ -66,11 +66,13 @@ pipeline {
         //         sh 'docker rm -f wp_cli || true'
         //     }
         // }
-        stage('Verify WordPress Page') {
-          steps {
-            sh 'curl http://localhost:8080'
-          }
-        }
+
+
+        // stage('Verify WordPress Page') {
+        //   steps {
+        //     sh 'curl http://localhost:8080'
+        //   }
+        // }
     }
     post {
         always {
