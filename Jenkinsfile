@@ -20,8 +20,6 @@ pipeline {
         }
 
 
-
-
         stage('Setup test environment') {
             steps {
                 sh '''
