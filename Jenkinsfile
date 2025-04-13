@@ -6,7 +6,7 @@ pipeline {
     stages {
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('Mysonarqube') { // Name from Configure System
+                withSonarQubeEnv('test') { // Name from Configure System
                     sh '''
                     sonar-scanner \
                       -Dsonar.organization=devopsprojectteam \
