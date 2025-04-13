@@ -41,7 +41,7 @@ pipeline {
         }
         stage('Verify WordPress Page') {
           steps {
-            sh 'curl http://localhost:8080'
+            sh 'curl http://localhost:8088'
           }
         }
         stage('Wait for WP-CLI Initialization') {
