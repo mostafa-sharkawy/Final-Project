@@ -8,7 +8,7 @@ prompt_continue() {
 
 # Function to check if command exists
 command_exists() {
-    command -v "$1" &> /dev/null
+    command -v "$1" >/dev/null 2>&1
 }
 
 # Check for required commands
@@ -16,7 +16,7 @@ for cmd in terraform ansible-playbook; do
     if ! command_exists "$cmd"; then
         echo "Error: $cmd is not installed or not in PATH"
         exit 1
-    done
+    fi
 done
 
 # Get the directory where this script is located
