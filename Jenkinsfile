@@ -1,20 +1,19 @@
 pipeline {
     agent any
-    tools {
-        sonarQubeScanner 'Mysonarqube' // Name from Global Tool Config
-    }
     environment {
         SONARQUBE_ENV = credentials('SONAR_TOKEN2') // Jenkins secret credentials ID
     }
     stages {
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('MySonarQube2') { // Name of your SonarQube server in Jenkins
-                    sh 'sonar-scanner \
-                        -Dsonar.projectKey=wordpress_project \
-                        -Dsonar.sources=. \
-                        -Dsonar.host.url=$SONAR_HOST_URL \
-                        -Dsonar.login=$SONARQUBE_ENV'
+                withSonarQubeEnv('Mysonarqube') { // Name from Configure System
+                    sh '''
+                    sonar-scanner \
+                      -Dsonar.projectKey=wordpress_project \
+                      -Dsonar.sources=. \
+                      -Dsonar.host.url=$SONAR_HOST_URL \
+                      -Dsonar.login=$SONARQUBE_TOKEN
+                    '''
                 }
             }
         }
