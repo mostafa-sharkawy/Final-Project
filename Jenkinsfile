@@ -54,24 +54,19 @@ pipeline {
         stage('Run WP-CLI Tests') {
             steps {
                 sh '''
-                docker-compose exec -T  wp-cli bash -c '
+                docker-compose exec -T wp-cli bash -c '
                 # Make sure WordPress is installed
                 if ! wp core is-installed; then
-                    # wp core install --url=http://localhost:8080 --title="Test Site" \
-                    # --admin_user=admin --admin_password=password \
-                    # --admin_email=admin@example.com --skip-email
-
                     wp core install --url=http://localhost:8080 --title="Test Site" --admin_user=admin --admin_password=password --admin_email=admin@example.com --skip-email
                     wp option update siteurl "http://localhost:8080"
                     wp option update home "http://localhost:8080"
                     wp config set WP_DEBUG true --raw
                     wp config set WP_DEBUG_LOG true --raw
                     wp rewrite structure "/%postname%/"
-
                 fi
-                
-                # Run our custom test command
-                wp test
+
+                # Run our custom test command with --require
+                wp --require=/var/www/html/wp-cli-test-command.php test
                 '
                 '''
             }

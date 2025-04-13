@@ -55,6 +55,9 @@ services:
           sleep 2
         done
 
+        # Make wp-config.php writable
+        chmod 666 /var/www/html/wp-config.php || true
+
         wp package install wp-cli/wp-cli
         wp --require=/var/www/html/wp-cli-test-command.php cli info
         tail -f /dev/null
