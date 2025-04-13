@@ -24,7 +24,7 @@ pipeline {
                     def attempt = 1
                     while (attempt <= maxAttempts) {
                         try {
-                            sh 'curl http://localhost:8088'
+                            sh 'curl http://localhost:8080'
                             echo "WordPress is ready!"
                             break
                         } catch (Exception e) {
@@ -41,7 +41,7 @@ pipeline {
         }
         stage('Verify WordPress Page') {
           steps {
-            sh 'curl http://localhost:8088'
+            sh 'curl http://localhost:8080'
           }
         }
         stage('Wait for WP-CLI Initialization') {
