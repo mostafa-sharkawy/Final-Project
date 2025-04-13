@@ -1,0 +1,4 @@
+services:
+  wordpress:
+    ports:
+      - "8080:80"  # ✅ Only expose if tests pass
