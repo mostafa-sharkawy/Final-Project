@@ -9,7 +9,8 @@ pipeline {
                 withSonarQubeEnv('Mysonarqube') { // Name from Configure System
                     sh '''
                     sonar-scanner \
-                      -Dsonar.projectKey=wordpress_project \
+                      -Dsonar.organization=devopsprojectteam \
+                      -Dsonar.projectKey=devopsprojectteam_computer-stopre \
                       -Dsonar.sources=. \
                       -Dsonar.host.url=$SONAR_HOST_URL \
                       -Dsonar.login=$SONARQUBE_ENV
