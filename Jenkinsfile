@@ -24,7 +24,7 @@ pipeline {
                     def attempt = 1
                     while (attempt <= maxAttempts) {
                         try {
-                            sh 'curl http://localhost:8080'
+                            sh 'curl http://localhost:8088'
                             echo "WordPress is ready!"
                             break
                         } catch (Exception e) {
