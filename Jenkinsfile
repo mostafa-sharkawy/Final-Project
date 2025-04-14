@@ -1,29 +1,29 @@
 pipeline {
     agent any
-    environment {
-        SONARQUBE_ENV = credentials('SONAR_TOKEN2') // Jenkins secret credentials ID
+   // environment {
+       // SONARQUBE_ENV = credentials('SONAR_TOKEN2') // Jenkins secret credentials ID
     
-    }
-    tools {
+    //}
+   // tools {
         // maven 'Mymaven' // If it's a Maven project
-        sonarQubeScanner 'Test' // Use the Name of your SonarQube Scanner tool config
-    }
+        //sonarQubeScanner 'Test' // Use the Name of your SonarQube Scanner tool config
+   // }
     stages {
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('Mysonarqube') { // Name from Configure System
-                    sh '''
-                    sonar-scanner \
-                      -Dsonar.organization=devopsprojectteam \
-                      -Dsonar.projectKey=devopsprojectteam_computer-stopre \
-                      -Dsonar.sources=. \
-                      -Dsonar.host.url=$SONAR_HOST_URL \
-                      -Dsonar.login=$SONARQUBE_ENV
-                    '''
-                }
-            }
-        }
-
+      //  stage('SonarQube Analysis') {
+          //  steps {
+           //     withSonarQubeEnv('Mysonarqube') { // Name from Configure System
+             //       sh '''
+               //     sonar-scanner \
+                 //     -Dsonar.organization=devopsprojectteam \
+                   //   -Dsonar.projectKey=devopsprojectteam_computer-stopre \
+                     // -Dsonar.sources=. \
+                     // -Dsonar.host.url=$SONAR_HOST_URL \
+                     // -Dsonar.login=$SONARQUBE_ENV
+                    //'''
+                //}
+           // }
+        //}
+     
 
         stage('Setup test environment') {
             steps {
@@ -57,6 +57,35 @@ pipeline {
                 }
             }
         }
+
+        
+
+        stage('Extract WordPress Source') {
+            steps {
+                sh '''
+                mkdir -p wordpress-src
+                docker cp wordpress_app:/var/www/html/. wordpress-src/
+                '''
+            }
+        }
+
+        stage('Run SonarQube Analysis') {
+            steps {
+                sh '''
+                docker run --rm \
+                  -v $(pwd)/wordpress-src:/usr/src \
+                  sonarsource/sonar-scanner-cli \
+                  sonar-scanner \
+                  -Dsonar.projectKey=wordpress-container-scan \
+                  -Dsonar.sources=/usr/src \
+                  -Dsonar.language=php \
+                  -Dsonar.sourceEncoding=UTF-8 \
+                  -Dsonar.host.url=http://localhost:9000
+                '''
+            }
+        }
+
+       
         // stage('Wait for WP-CLI Initialization') {
         //     steps {
         //         sleep time: 10, unit: 'SECONDS' // Adjust the wait time as needed
