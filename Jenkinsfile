@@ -82,7 +82,7 @@ pipeline {
                 -Dsonar.sources=/usr/src \
                 -Dsonar.language=php \
                 -Dsonar.sourceEncoding=UTF-8 \
-                -Dsonar.host.url=http://localhost:9000
+                -Dsonar.host.url=http://10.0.1.34:9000
                 '''
             }
         }
