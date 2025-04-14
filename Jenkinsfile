@@ -83,7 +83,7 @@ pipeline {
                 -Dsonar.language=php \
                 -Dsonar.sourceEncoding=UTF-8 \
                 -Dsonar.host.url=https://sonarcloud.io
-                 -Dsonar.login=$SONAR_TOKEN
+                -Dsonar.login=$SONARQUBE_ENV
                 '''
             }
         }
