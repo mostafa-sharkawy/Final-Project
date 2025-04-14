@@ -4,7 +4,7 @@ pipeline {
         SONARQUBE_ENV = credentials('SONAR_TOKEN2') // Jenkins secret credentials ID
     }
     tools {
-        maven 'Mymaven' // If it's a Maven project
+        maven 'Mymavens' // If it's a Maven project
         // sonarQubeScanner 'test' // Use the Name of your SonarQube Scanner tool config
     }
     stages {
