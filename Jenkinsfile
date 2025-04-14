@@ -69,21 +69,23 @@ pipeline {
             }
         }
 
-        stage('Run SonarQube Analysis') {
+       stage('Run SonarQube Analysis') {
             steps {
                 sh '''
+                echo "PWD is: $(pwd)"
                 docker run --rm \
-                  -v $(pwd)/wordpress-src:/usr/src \
-                  sonarsource/sonar-scanner-cli \
-                  sonar-scanner \
-                  -Dsonar.projectKey=wordpress-container-scan \
-                  -Dsonar.sources=/usr/src \
-                  -Dsonar.language=php \
-                  -Dsonar.sourceEncoding=UTF-8 \
-                  -Dsonar.host.url=http://localhost:9000
+                -v "$(pwd)/wordpress-src:/usr/src" \
+                sonarsource/sonar-scanner-cli \
+                sonar-scanner \
+                -Dsonar.projectKey=wordpress-container-scan \
+                -Dsonar.sources=/usr/src \
+                -Dsonar.language=php \
+                -Dsonar.sourceEncoding=UTF-8 \
+                -Dsonar.host.url=http://localhost:9000
                 '''
             }
         }
+
 
        
         // stage('Wait for WP-CLI Initialization') {
