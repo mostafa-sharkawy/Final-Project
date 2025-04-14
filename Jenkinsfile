@@ -3,10 +3,13 @@ pipeline {
     environment {
         SONARQUBE_ENV = credentials('SONAR_TOKEN2') // Jenkins secret credentials ID
     }
+    tools {
+        sonarQubeScanner 'SonarQubeScanner' // Use the Name of your SonarQube Scanner tool config
+    }
     stages {
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('test') { // Name from Configure System
+                withSonarQubeEnv('Mysonarqube') { // Name from Configure System
                     sh '''
                     sonar-scanner \
                       -Dsonar.organization=devopsprojectteam \
