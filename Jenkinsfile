@@ -74,6 +74,7 @@ pipeline {
                 sh '''
                 echo "PWD is: $(pwd)"
                 docker run --rm \
+                --network container:sonarqube \  # 👈 let the scanner talk to sonarqube
                 -v "$(pwd)/wordpress-src:/usr/src" \
                 sonarsource/sonar-scanner-cli \
                 sonar-scanner \
@@ -85,6 +86,7 @@ pipeline {
                 '''
             }
         }
+
 
 
        

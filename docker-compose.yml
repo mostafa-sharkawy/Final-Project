@@ -39,6 +39,18 @@ services:
         find /var/www/html -type f -exec chmod 664 {} \; &&
         docker-entrypoint.sh apache2-foreground
       '
+  sonarqube:
+    image: sonarqube:latest
+    container_name: sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+
+  
 
   wp-cli:
     image: wordpress:cli
@@ -62,6 +74,10 @@ services:
         wp --require=/var/www/html/wp-cli-test-command.php cli info
         tail -f /dev/null
       '
+    # This command will keep the container running for testing purposes
+    # You can replace it with your actual command later
 volumes: 
   db_data: 
   wp_data: 
+  sonarqube_data:
+  sonarqube_extensions:
