@@ -74,6 +74,8 @@ pipeline {
                 sh '''
                 echo "PWD is: $(pwd)"
                 echo "SonarQube Token: $SONARQUBE_ENV"
+                # Attempt to access a basic SonarCloud API endpoint requiring authentication
+                curl -v -H "Authorization: Bearer $SONARQUBE_ENV" https://api.sonarcloud.io/api/me
 
                 docker run --rm \
                 --network container:sonarqube \
