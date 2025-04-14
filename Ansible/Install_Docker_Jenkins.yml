@@ -8,7 +8,6 @@
       apt:
         update_cache: yes
 
-    # Docker Installation
     - name: Install required packages to allow apt over HTTPS
       apt:
         name: apt-transport-https
@@ -31,13 +30,49 @@
         state: present
         update_cache: yes
 
-    - name: Install docker-compose
-      remote_user: ubuntu
-      get_url: 
-        url : https://github.com/docker/compose/releases/download/1.25.1-rc1/docker-compose-Linux-x86_64
-        dest: /usr/local/bin/docker-compose
-        mode: 'u+x,g+x'
-    
+    - name: Install Docker Compose
+      block:
+        - name: Ensure install directory exists
+          ansible.builtin.file:
+            path: /usr/local/bin
+            state: directory
+            mode: '0755'
+
+        - name: Download Docker Compose (official binary)
+          ansible.builtin.get_url:
+            url: "https://github.com/docker/compose/releases/download/v2.23.0/docker-compose-linux-x86_64"
+            dest: /usr/local/bin/docker-compose
+            mode: '0755'
+            owner: root
+            group: root
+            checksum: "sha256:6e06123399e5428fbd603564afdac74821fa0a7b4465e8a1a2359b362fc42fc4"
+            timeout: 30
+            validate_certs: yes
+
+        - name: Verify Docker Compose installation
+          ansible.builtin.command: docker-compose --version
+          register: compose_version
+          changed_when: false
+          failed_when: compose_version.rc != 0
+
+        - name: Create symlink for Docker Compose v2
+          ansible.builtin.file:
+            src: /usr/local/bin/docker-compose
+            dest: /usr/local/bin/docker-compose
+            state: link
+            force: yes
+
+      rescue:
+        - name: Clean up on failure
+          ansible.builtin.file:
+            path: /usr/local/bin/docker-compose
+            state: absent
+          ignore_errors: yes
+
+        - name: Notify about installation failure
+          ansible.builtin.debug:
+            msg: "Failed to install Docker Compose"
+          changed_when: false
 
     - name: Add current user to docker group
       user:
@@ -51,10 +86,9 @@
         state: started
         enabled: yes
 
-    # Jenkins Installation
     - name: Install Java (required by Jenkins)
       apt:
-        name: openjdk-17-jre  # Or a later version
+        name: openjdk-17-jre
         state: present
 
     - name: Add Jenkins repository key
@@ -79,27 +113,38 @@
         state: started
         enabled: yes
 
-   
+    - name: Wait for Jenkins to start up
+      wait_for:
+        port: 8085
+        timeout: 60
+    
+    - name: Configure Jenkins to run on port 8085
+      lineinfile:
+        path: /etc/default/jenkins
+        regexp: "^HTTP_PORT="
+        line: "HTTP_PORT=8085"
+        state: present
+        backup: yes
 
-    - name: add user jenkins in docker group then restart jenkins 
+    - name: Add user jenkins to docker group
       user:
         name: jenkins
         groups: docker
         append: yes
-    
+
     - name: Restart Jenkins service
       service:
         name: jenkins
         state: restarted
         enabled: yes
-      
+
     - name: Enable ufw
       ufw:
         state: enabled
       ignore_errors: yes
       become: true
 
-    - name: Open Jenkins port (8080) in firewall (if ufw is enabled)
+    - name: Open Jenkins port (8080) in firewall
       ufw:
         rule: allow
         port: '8080'
@@ -107,9 +152,60 @@
       ignore_errors: yes
       become: true
 
+    - name: Open port 8088 in firewall
+      ufw:
+        rule: allow
+        port: '8088'
+        proto: tcp
+      ignore_errors: yes
+      become: true
 
-    
-    - name: Get /var/lib/jenkins/secrets/initialAdminPassword
+    - name: Open port 80 in firewall
+      ufw:
+        rule: allow
+        port: '80'
+        proto: tcp
+      ignore_errors: yes
+      become: true
+
+    - name: Open port 8085 in firewall
+      ufw:
+        rule: allow
+        port: '8085'
+        proto: tcp
+      ignore_errors: yes
+      become: true
+
+    - name: Open Docker port 2375 in firewall
+      ufw:
+        rule: allow
+        port: '2375'
+        proto: tcp
+      ignore_errors: yes
+      become: true
+
+    - name: Open SMTP port 25 in firewall
+      ufw:
+        rule: allow
+        port: '25'
+        proto: tcp
+      ignore_errors: yes
+      become: true
+
+    - name: Open SMTP port 587 in firewall
+      ufw:
+        rule: allow
+        port: '587'
+        proto: tcp
+      ignore_errors: yes
+      become: true
+
+    - name: Reload ufw
+      command: ufw reload
+      ignore_errors: yes
+      become: true
+
+    - name: Get Jenkins initial admin password
       command: cat /var/lib/jenkins/secrets/initialAdminPassword
       register: jenkins_password
       changed_when: false
@@ -119,7 +215,7 @@
         msg: "Jenkins initial admin password: {{ jenkins_password.stdout }}"
       when: jenkins_password.stdout != ""
 
-    - name: Print Jenkins URL 
+    - name: Print Jenkins URL
       debug:
         msg: "Jenkins URL: http://{{ ansible_host }}:8080"
       when: jenkins_password.stdout != ""
