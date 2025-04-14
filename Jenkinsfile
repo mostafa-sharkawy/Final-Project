@@ -6,7 +6,7 @@ pipeline {
     }
     tools {
         // maven 'Mymaven' // If it's a Maven project
-        sonarQubeScanner 'test' // Use the Name of your SonarQube Scanner tool config
+        sonarQubeScanner 'Test' // Use the Name of your SonarQube Scanner tool config
     }
     stages {
         stage('SonarQube Analysis') {
