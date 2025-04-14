@@ -83,6 +83,8 @@ pipeline {
                 -Dsonar.language=php \
                 -Dsonar.sourceEncoding=UTF-8 \
                 -Dsonar.host.url=http://18.202.222.188:9000
+                -Dsonar.login=<d985316b47f926d8a6214337ca218be87d86f5f6>
+
                 '''
             }
         }
