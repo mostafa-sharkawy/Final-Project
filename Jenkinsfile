@@ -2,6 +2,7 @@ pipeline {
     agent any
     environment {
         SONARQUBE_ENV = credentials('SONAR_TOKEN2') // Jenkins secret credentials ID
+    
     }
     tools {
         // maven 'Mymaven' // If it's a Maven project
