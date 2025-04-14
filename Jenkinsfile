@@ -1,7 +1,7 @@
 pipeline {
     agent any
    environment {
-       SONARQUBE_ENV = credentials('SONAR_TOKEN') // Jenkins secret credentials ID
+       SONARQUBE_ENV = credentials('SONAR_TOKEN2') // Jenkins secret credentials ID
     
     }
    // tools {
@@ -73,6 +73,8 @@ pipeline {
             steps {
                 sh '''
                 echo "PWD is: $(pwd)"
+                echo "SonarQube Token: $SONARQUBE_ENV"
+
                 docker run --rm \
                 --network container:sonarqube \
                 -v "$(pwd)/wordpress-src:/usr/src" \
