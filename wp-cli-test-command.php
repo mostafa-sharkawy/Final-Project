@@ -14,6 +14,5 @@ WP_CLI::add_command('test', function($args) {
         WP_CLI::error("Plugin is not active");
     }
     
-    
     // Add more tests as needed
 });
