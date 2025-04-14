@@ -40,7 +40,7 @@ services:
         docker-entrypoint.sh apache2-foreground
       '
   sonarqube:
-    image: sonarqube:latest
+    image: sonarqube:9.5
     container_name: sonarqube
     ports:
       - "9000:9000"
