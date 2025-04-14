@@ -1,7 +1,7 @@
 pipeline {
     agent any
    // environment {
-       // SONARQUBE_ENV = credentials('SONAR_TOKEN2') // Jenkins secret credentials ID
+       SONARQUBE_ENV = credentials('SONAR_TOKEN') // Jenkins secret credentials ID
     
     //}
    // tools {
@@ -83,8 +83,7 @@ pipeline {
                 -Dsonar.language=php \
                 -Dsonar.sourceEncoding=UTF-8 \
                 -Dsonar.host.url=https://sonarcloud.io
-                -Dsonar.login=<1ac90e85f23eca564fc0c0b0560fc054f674da08>
-
+                 -Dsonar.login=$SONAR_TOKEN
                 '''
             }
         }
