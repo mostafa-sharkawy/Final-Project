@@ -1,6 +1,6 @@
 pipeline {
     agent any
-   // environment {
+   environment {
        SONARQUBE_ENV = credentials('SONAR_TOKEN') // Jenkins secret credentials ID
     
     }
