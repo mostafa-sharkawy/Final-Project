@@ -72,10 +72,11 @@ pipeline {
        stage('Run SonarQube Analysis') {
             steps {
                 sh '''
+                 # 👈 let the scanner talk to sonarqube
                 echo "PWD is: $(pwd)"
                 docker run --rm \
                 --network container:sonarqube \  
-                # 👈 let the scanner talk to sonarqube
+               
                 -v "$(pwd)/wordpress-src:/usr/src" \
                 sonarsource/sonar-scanner-cli \
                 sonar-scanner \
