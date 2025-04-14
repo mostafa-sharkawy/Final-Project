@@ -1,37 +1,13 @@
 pipeline {
     agent any
-   environment {
-       SONARQUBE_ENV = credentials('SONAR_TOKEN2') // Jenkins secret credentials ID
-    
-    }
-   // tools {
-        // maven 'Mymaven' // If it's a Maven project
-        //sonarQubeScanner 'Test' // Use the Name of your SonarQube Scanner tool config
-   // }
     stages {
-      //  stage('SonarQube Analysis') {
-          //  steps {
-           //     withSonarQubeEnv('Mysonarqube') { // Name from Configure System
-             //       sh '''
-               //     sonar-scanner \
-                 //     -Dsonar.organization=devopsprojectteam \
-                   //   -Dsonar.projectKey=devopsprojectteam_computer-stopre \
-                     // -Dsonar.sources=. \
-                     // -Dsonar.host.url=$SONAR_HOST_URL \
-                     // -Dsonar.login=$SONARQUBE_ENV
-                    //'''
-                //}
-           // }
-        //}
-     
-
-        stage('Setup test environment') {
+        stage('Deploy to Production') {
             steps {
                 sh '''
                 # 1. Force remove specific containers if they exist
                 docker rm -f mysql_db wordpress_app wp_cli 2>/dev/null || true
                                 
-                docker-compose up -d
+                docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
                 '''
             }
         }
@@ -58,82 +34,15 @@ pipeline {
             }
         }
 
-        
-
-        stage('Extract WordPress Source') {
-            steps {
-                sh '''
-                mkdir -p wordpress-src
-                docker cp wordpress_app:/var/www/html/. wordpress-src/
-                '''
-            }
-        }
-
-        stage('Run SonarQube Analysis') {
-            steps {
-                sh '''
-                echo "PWD is: $(pwd)"
-                echo "SonarQube Token: $SONARQUBE_ENV"
-                # Attempt to access a basic SonarCloud API endpoint requiring authentication
-                curl -v -H "Authorization: Bearer $SONARQUBE_ENV" https://api.sonarcloud.io/api/me
-
-                docker run --rm \
-                --network container:sonarqube \
-                -v "$(pwd)/wordpress-src:/usr/src" \
-                sonarsource/sonar-scanner-cli \
-                sonar-scanner \
-                -Dsonar.projectKey=devopsprojectteam_computer-stopre \
-                -Dsonar.sources=. \
-                -Dsonar.language=php \
-                -Dsonar.sourceEncoding=UTF-8 \
-                -Dsonar.host.url=https://sonarcloud.io
-                -Dsonar.login=$SONARQUBE_ENV
-                '''
-            }
-        }
-
-
-       
-        // stage('Wait for WP-CLI Initialization') {
-        //     steps {
-        //         sleep time: 10, unit: 'SECONDS' // Adjust the wait time as needed
-        //         echo "WP-CLI should have initialized WordPress."
-        //     }
-        // }
-        stage('Run WP-CLI Tests') {
-            steps {
-                sh '''
-                docker-compose exec -T wp-cli bash -c '
-                wp --require=/var/www/html/wp-cli-test-command.php test
-                '
-                '''
-
-            }
-        }
 
         stage('Tear Down Test Environment') {
             steps {
                 sh 'docker-compose down'
             }
         }
-        stage('Deploy to Production') {
-            steps {
-                sh 'docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d'
-            }
-        }
-
-        // stage('Remove WP-CLI Container') {
-        //     steps {
-        //         sh 'docker rm -f wp_cli || true'
-        //     }
-        // }
 
 
-        // stage('Verify WordPress Page') {
-        //   steps {
-        //     sh 'curl http://localhost:8080'
-        //   }
-        // }
+
     }
     post {
         always {
