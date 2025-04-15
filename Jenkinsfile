@@ -1,5 +1,4 @@
 pipeline {
-    
     agent any
     stages {
 
@@ -54,7 +53,7 @@ pipeline {
 
         stage('Tear Down Test Environment') {
             steps {
-                sh 'docker compose down'
+                sh 'docker-compose down'
             }
         }
         stage('Deploy to Production') {
@@ -77,5 +76,4 @@ pipeline {
         }
     }
 }
-
 
