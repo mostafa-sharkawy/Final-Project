@@ -89,6 +89,13 @@ resource "aws_security_group" "web_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -101,13 +108,20 @@ resource "aws_security_group" "web_sg" {
   }
 }
 
-# Ubuntu EC2 Instance
 resource "aws_instance" "web-server-instance" {
   ami                    = var.ami_id
-  instance_type          = "t2.micro"
+  instance_type          = "t3.medium"
   key_name               = aws_key_pair.main.key_name
   subnet_id              = aws_subnet.subnet.id
   vpc_security_group_ids = [aws_security_group.web_sg.id]
+  
+  user_data = <<-EOF
+              #!/bin/bash
+              apt-get update
+              apt-get install -y openssh-server
+              systemctl enable ssh
+              systemctl start ssh
+              EOF
 
   tags = {
     Name = "WebserverInstance"
