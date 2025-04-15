@@ -2,3 +2,4 @@ services:
   wordpress:
     ports:
       - "3000:80"  # ✅ Only expose if tests pass
+      
