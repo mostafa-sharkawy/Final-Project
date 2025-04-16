@@ -3,14 +3,23 @@
 # Hardcoded Git repository URL
 REPO_URL="https://github.com/mostafa-sharkawy/Final-Project.git"
 
-# Ask for folder name
-read -p "Enter folder name: " folder_name
+# Find the highest-numbered folder (e.g., 1, 2, 3...)
+last_folder=$(find . -maxdepth 1 -type d -name '[0-9]*' | sort -V | tail -n 1)
 
-# Create folder
-mkdir -p "$folder_name" || { echo "❌ Error: Failed to create folder '$folder_name'"; exit 1; }
+# If no numbered folders exist, start with '1', else increment
+if [[ -z "$last_folder" ]]; then
+    new_folder="1"
+else
+    last_num=${last_folder#./}  # Remove './' prefix
+    new_folder=$((last_num + 1))
+fi
+
+# Create the new folder
+mkdir "$new_folder" || { echo "❌ Error: Failed to create folder '$new_folder'"; exit 1; }
+
 
 # Enter folder and clone repo
-cd "$folder_name" || { echo "❌ Error: Failed to enter folder '$folder_name'"; exit 1; }
+cd "$new_folder" || { echo "❌ Error: Failed to enter folder '$new_folder'"; exit 1; }
 git clone "$REPO_URL" || { echo "❌ Error: Failed to clone repository"; exit 1; }
 
 # Extract repo name from URL (for entering the correct subfolder)
@@ -25,5 +34,6 @@ if [[ -f "deploy.sh" ]]; then
 else
     echo "⚠️ Warning: deploy.sh not found in the repository!"
 fi
+
 
 
