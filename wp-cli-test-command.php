@@ -8,10 +8,10 @@ WP_CLI::add_command('test', function($args) {
     WP_CLI::success("Database connection: " . ($result === '1' ? 'OK' : 'Failed'));
     
     // Test plugin activation
-    if (is_plugin_active('akismet/akismet.php')) {
-        WP_CLI::success("Plugin is active");
+    if (!is_plugin_active('akismet/akismet.php')) {
+        WP_CLI::success("Plugin is not active");
     } else {
-        WP_CLI::error("Plugin is not active");
+        WP_CLI::error("Plugin is active");
     }
     
     // Add more tests as needed
