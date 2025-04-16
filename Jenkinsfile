@@ -6,11 +6,10 @@ pipeline {
         SONAR_ORG = 'devopsprojectteam'
         SONAR_HOST = 'https://sonarcloud.io'
         SONAR_TOKEN = credentials('SONAR_TOKEN')
+        SLACK_CHANNEL = '#final-project'
     }
 
-
     stages {
-
         stage('Setup test environment') {
             steps {
                 echo "📦 Bringing up the test environment..."
@@ -22,6 +21,7 @@ pipeline {
                 '''
             }
         }
+
         stage('Wait for WordPress') {
             steps {
                 script {
@@ -44,6 +44,7 @@ pipeline {
                 }
             }
         }
+
         stage('Install WordPress if not installed') {
             steps {
                 script {
@@ -58,9 +59,6 @@ pipeline {
                     ).trim()
 
                     echo "📡 Retrieved Public IP: [${publicIP}]"
-
-
-
                     def wpUrl = "http://${publicIP}:3000"
                     sleep time: 10, unit: 'SECONDS'
 
@@ -101,7 +99,6 @@ pipeline {
                     -Dsonar.host.url=https://sonarcloud.io \
                     -Dsonar.login=$SONAR_TOKEN
                     '''
-
                 }
             }
         }
@@ -117,31 +114,19 @@ pipeline {
             }
         }
 
-
-
-
-
-
-
-
-
-        // Only install and activate theme and dummy data if WordPress is not installed
         stage('Install and Activate Theme and Dummy Data') {
             when {
                 expression {
-                    // Check if the theme 'astra' is installed
                     def isThemeInstalled = sh(script: "docker-compose exec -T wp-cli wp theme list --status=active --fields=name | grep 'ona-architecture' || echo 'not_installed'", returnStdout: true).trim()
                     return isThemeInstalled == 'not_installed'
                 }
             }
-
             steps {
                 echo "🎨 Installing theme and dummy data..."
                 sh '''
                     # Install unzip in WordPress container
                     docker-compose exec -T wordpress apt-get update
                     docker-compose exec -T wordpress apt-get install -y unzip
-
 
                     # Download and install theme
                     docker-compose exec -T wordpress bash -c '
@@ -229,22 +214,13 @@ pipeline {
             }
         }
 
-
-
-
-
-
-
-
-
-
-
         stage('Tear Down Test Environment') {
             steps {
                 echo "🧹 Tearing down test environment..."
                 sh 'docker compose down'
             }
         }
+
         stage('Deploy to Production') {
             steps {
                 script {
@@ -266,15 +242,32 @@ pipeline {
             }
         }
     }
+
     post {
         success {
             echo "Cleaning up workspace and Docker images..."
             sh "docker system prune -f"
             echo "🎉 Pipeline completed successfully!"
+            script {
+                slackSend(
+                    channel: "${SLACK_CHANNEL}",
+                    color: 'good',
+                    message: "🚀 WordPress Deployment Successful"
+                )
+            }
         }
+        
         failure {
             echo "🚨 Pipeline failed. Check logs for more info."
+            script {
+                slackSend(
+                    channel: "${SLACK_CHANNEL}",
+                    color: 'danger',
+                    message: "❌ WordPress Deployment Failed"
+                )
+            }
         }
+        
         always {
             cleanWs()
         }
