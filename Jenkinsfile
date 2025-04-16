@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    environment {
+        SLACK_CHANNEL = '#final-project' // Your specified Slack channel
+    }
     stages {
 
         stage('Setup test environment') {
@@ -135,8 +138,56 @@ echo "📡 Retrieved Public IP: [${publicIP}]"
         }
     }
     post {
+
         always {
-            cleanWs()
+
+            script {
+
+                sh 'docker compose logs > final_logs.txt 2>/dev/null || true'
+
+                archiveArtifacts artifacts: 'final_logs.txt'
+
+                cleanWs()
+
+            }
+
         }
+
+        success {
+
+            script {
+
+                slackSend(
+
+                    channel: "${SLACK_CHANNEL}",
+
+                    color: 'good',
+
+                    message: "🚀 WordPress Deployment Successful"
+
+                )
+
+            }
+
+        }
+
+        failure {
+
+            script {
+
+                slackSend(
+
+                    channel: "${SLACK_CHANNEL}",
+
+                    color: 'danger',
+
+                    message: "❌ WordPress Deployment Failed"
+
+                )
+
+            }
+
+        }
+
     }
 }
