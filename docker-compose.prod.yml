@@ -1,5 +1,5 @@
 services:
   wordpress:
     ports:
-      - "8088:80"  # ✅ Only expose if tests pass
+      - "3000:80"  # ✅ Only expose if tests pass
       
