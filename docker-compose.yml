@@ -1,7 +1,7 @@
  
 services: 
   db: 
-    image: mysql:5.7 
+    image: mysql:5.7.41  # Latest stable version of MySQL (5.7.x)
     container_name: mysql_db 
     restart: unless-stopped  # Changed from 'always'
     environment: 
@@ -20,7 +20,7 @@ services:
       retries: 10
 
   wordpress: 
-    image: wordpress:latest 
+    image: wordpress:6.2-php8.0  # Latest stable version of WordPress with PHP 8.0
     container_name: wordpress_app 
     restart: unless-stopped  # Changed from 'always'
     depends_on: 
@@ -37,18 +37,25 @@ services:
         chown -R www-data:www-data /var/www/html &&
         find /var/www/html -type d -exec chmod 775 {} \; &&
         find /var/www/html -type f -exec chmod 664 {} \; &&
+
+        # Ensure wp-content specifically is writable
+        mkdir -p /var/www/html/wp-content &&
+        chown -R www-data:www-data /var/www/html/wp-content &&
+        chmod -R 775 /var/www/html/wp-content &&
+
         docker-entrypoint.sh apache2-foreground
       '
 
 
   wp-cli:
-    image: wordpress:cli
+    image: wordpress:cli-2.7.1  # Latest version of WP-CLI
     container_name: wp_cli
+    user: "www-data"
     depends_on:
       - wordpress
     volumes:
       - wp_data:/var/www/html
-      - ./wp-cli-test-command.php:/var/www/html/wp-cli-test-command.php  # Add this line
+      - ./wp-cli-test-command.php:/var/www/html/wp-cli-test-command.php 
     environment:
       WORDPRESS_DB_HOST: db:3306
       WORDPRESS_DB_USER: wpuser
@@ -58,6 +65,12 @@ services:
       sh -c '
         # Make wp-config.php writable
         chmod 666 /var/www/html/wp-config.php || true
+        chown -R www-data:www-data /var/www/html &&
+        chmod -R 775 /var/www/html &&
+
+        echo "🔧 Fixing wp-content permissions..."
+        chown -R www-data:www-data /var/www/html/wp-content || true
+        chmod -R 775 /var/www/html/wp-content || true
 
         wp package install wp-cli/wp-cli
         wp --require=/var/www/html/wp-cli-test-command.php cli info
@@ -70,3 +83,4 @@ volumes:
   wp_data: 
   sonarqube_data:
   sonarqube_extensions:
+
