@@ -71,7 +71,7 @@ echo "All steps completed successfully!"
 echo "============================================="
 
 # Display important information
-echo "Jenkins URL: http://$(terraform -chdir="$PROJECT_DIR/Terraform" output -raw instance_public_ip):8085"
+echo "Jenkins URL: http://$(terraform -chdir="$PROJECT_DIR/Terraform" output -raw instance_public_ip):8080"
 echo "Initial admin password was displayed in the Ansible output above."
 
 # Ensure destroy.sh has execute permissions
