@@ -71,5 +71,18 @@ echo "All steps completed successfully!"
 echo "============================================="
 
 # Display important information
-echo "Jenkins URL: http://$(terraform -chdir="$PROJECT_DIR/Terraform" output -raw instance_public_ip):8080"
+echo "Jenkins URL: http://$(terraform -chdir="$PROJECT_DIR/Terraform" output -raw instance_public_ip):8085"
 echo "Initial admin password was displayed in the Ansible output above."
+
+# Ensure destroy.sh has execute permissions
+if [ -f "$PROJECT_DIR/destroy.sh" ]; then
+    echo "Setting execute permissions on destroy.sh..."
+    chmod +x "$PROJECT_DIR/destroy.sh"
+    echo "destroy.sh is now executable incase you need to destroy your Resources."
+elif [ -f "$SCRIPT_DIR/destroy.sh" ]; then
+    echo "Setting execute permissions on destroy.sh..."
+    chmod +x "$SCRIPT_DIR/destroy.sh"
+    echo "destroy.sh is now executable incase you need to destroy your Resources."
+else
+    echo "Warning: Could not find destroy.sh to set execute permissions."
+fi
