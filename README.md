@@ -9,6 +9,8 @@
 - Diagram
 
 ![Logo](Terraform/logo.jpeg)
+![Logo](Terraform/app.jpeg)
+![Logo](Terraform/net.jpeg)
 
 1.	Terraform build infrastructure VPC, Public subnet , EC2.
 2.	Ansible pushes configuration on EC2 to install Jenkins and Docker. 
