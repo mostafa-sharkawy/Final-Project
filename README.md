@@ -82,9 +82,9 @@ Check our Application
 Build Status Notification
  ![Logo](Terraform/net.jpeg)
  
-### Final Part
+## Final Part
 
-## Destroy it 
+### Destroy it 
 This will:
 1. Run 'terraform destroy' on: /home/Final-Project/Terraform
 2. Remove sensitive files including:
