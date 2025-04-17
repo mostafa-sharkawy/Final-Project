@@ -77,9 +77,10 @@ B-Configure slack, sonar and webhook on system jenkins.
 •	Install and Activate Theme and Dummy data
 •	Tear Down Test environment
 •	Deploy to Production
-Check our Application
+
+### Check our Application
  ![Logo](Terraform/app.PNG)
-Build Status Notification
+### Build Status Notification
  ![Logo](Terraform/net.jpeg)
  
 ## Final Part
