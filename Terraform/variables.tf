@@ -27,5 +27,5 @@ variable "ami_id" {
 
 variable "instance_type" {
   description = "EC2 instance type"
-  default     = "t3.medium" 
+  default     = "c3.large" 
 }
