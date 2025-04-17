@@ -4,92 +4,109 @@
   gather_facts: false
 
   tasks:
-    - name: Update apt package index
-      apt:
-        update_cache: yes
-
-    # Docker Installation on /mnt
-    - name: Create /mnt directories structure
+    # =====================
+    # 1. PREPARE /mnt STRUCTURE
+    # =====================
+    - name: Create /mnt directories
       file:
         path: "{{ item }}"
         state: directory
         mode: '0755'
       with_items:
-        - /mnt/docker
-        - /mnt/bin
-        - /mnt/jenkins  # Create directory first without user ownership
+        - /mnt/docker           # Docker containers/volumes
+        - /mnt/jenkins          # Jenkins home
+        - /mnt/bin              # For Docker Compose binary
+        - /mnt/docker-config    # Docker config files
 
-    # Jenkins Installation
-    - name: Install Java (required by Jenkins)
+    # =====================
+    # 2. JENKINS INSTALLATION (/mnt)
+    # =====================
+    - name: Install Java (Jenkins dependency)
       apt:
         name: openjdk-17-jre
         state: present
 
-    - name: Add Jenkins repository key
+    - name: Add Jenkins repository
       apt_key:
         url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
         state: present
+      notify: Update apt cache
 
-    - name: Add Jenkins repository to apt sources
+    - name: Add Jenkins repo to sources
       apt_repository:
-        repo: deb https://pkg.jenkins.io/debian-stable binary/
+        repo: "deb https://pkg.jenkins.io/debian-stable binary/"
         state: present
+      notify: Update apt cache
 
-    - name: Install Jenkins (this creates the jenkins user)
+    - name: Pre-configure Jenkins for /mnt
+      copy:
+        dest: /etc/default/jenkins
+        content: |
+          JENKINS_HOME=/mnt/jenkins
+          JENKINS_WAR=/usr/share/jenkins/jenkins.war
+          JENKINS_HTTP_PORT=8080
+
+    - name: Install Jenkins
       apt:
         name: jenkins
         state: present
         update_cache: yes
 
-    # Now that jenkins user exists, set proper permissions
-    - name: Set correct permissions for Jenkins home
+    - name: Set Jenkins permissions
       file:
         path: /mnt/jenkins
         owner: jenkins
         group: jenkins
         mode: '0755'
+        recurse: yes
 
-    - name: Update Jenkins home directory configuration
-      lineinfile:
-        path: /etc/default/jenkins
-        regexp: "^JENKINS_HOME="
-        line: "JENKINS_HOME=/mnt/jenkins"
-        state: present
-
-    # Rest of your Docker and system configuration...
-    # [Keep all your existing tasks below exactly as they were]
-    - name: Install required packages to allow apt over HTTPS
+    # =====================
+    # 3. DOCKER INSTALLATION (/mnt)
+    # =====================
+    - name: Install Docker dependencies
       apt:
-        name: apt-transport-https
+        name: 
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - software-properties-common
         state: present
-        install_recommends: no
 
     - name: Add Docker GPG key
       apt_key:
         url: https://download.docker.com/linux/ubuntu/gpg
         state: present
 
-    - name: Add Docker repository to apt sources
+    - name: Add Docker repository
       apt_repository:
-        repo: deb https://download.docker.com/linux/ubuntu focal stable
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
         state: present
+      notify: Update apt cache
 
-    - name: Install Docker
-      apt:
-        name: docker-ce
-        state: present
-        update_cache: yes
-    
-    - name: Configure Docker daemon to use /mnt/docker
+    - name: Configure Docker for /mnt
       copy:
         dest: /etc/docker/daemon.json
         content: |
           {
-            "data-root": "/mnt/docker"
+            "data-root": "/mnt/docker",
+            "storage-driver": "overlay2"
           }
 
-    - name: Install Docker-Compose
-      ansible.builtin.get_url:
+    - name: Install Docker components
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+        update_cache: yes
+
+    # =====================
+    # 4. DOCKER COMPOSE (/mnt)
+    # =====================
+    - name: Install Docker Compose to /mnt
+      get_url:
         url: "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-linux-x86_64"
         dest: "/mnt/bin/docker-compose"
         mode: "0755"
@@ -101,99 +118,101 @@
         state: link
         force: yes
 
-    - name: Add Jenkins user to docker group
-      ansible.builtin.user:
-        name: jenkins
-        groups: docker
-        append: yes
-
-    - name: Add current user to docker group
+    # =====================
+    # 5. FINAL CONFIGURATION
+    # =====================
+    - name: Add users to docker group
       user:
-        name: "{{ ansible_user }}"
+        name: "{{ item }}"
         groups: docker
         append: yes
+      with_items:
+        - jenkins
+        - "{{ ansible_user }}"
 
-    - name: Start Docker service
-      service:
-        name: docker
-        state: started
-        enabled: yes
+    - name: Create systemd override for Jenkins
+      block:
+        - name: Create override directory
+          file:
+            path: /etc/systemd/system/jenkins.service.d
+            state: directory
 
-    - name: Start Jenkins service
-      service:
-        name: jenkins
-        state: started
-        enabled: yes
+        - name: Add override config
+          copy:
+            dest: /etc/systemd/system/jenkins.service.d/override.conf
+            content: |
+              [Service]
+              Environment="JENKINS_HOME=/mnt/jenkins"
+              WorkingDirectory=/mnt/jenkins
 
-    - name: Restart Jenkins service (to apply all changes)
+    - name: Reload systemd
+      systemd:
+        daemon_reload: yes
+
+    # =====================
+    # 6. START SERVICES
+    # =====================
+    - name: Enable and start services
       service:
-        name: jenkins
+        name: "{{ item }}"
         state: restarted
         enabled: yes
+      with_items:
+        - docker
+        - jenkins
 
-    # Firewall configuration
-    - name: Enable ufw
+    # =====================
+    # 7. FIREWALL CONFIG
+    # =====================
+    - name: Configure firewall
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      with_items:
+        - 22
+        - 8080
+        - 3000
+        - 9090
+
+    - name: Enable firewall
       ufw:
         state: enabled
-      ignore_errors: yes
-      become: true
+        policy: deny
 
-    - name: Open Jenkins port (8080) in firewall
-      ufw:
-        rule: allow
-        port: '8080'
-        proto: tcp
-      ignore_errors: yes
-      become: true
+    # =====================
+    # 8. VERIFICATION
+    # =====================
+    - name: Verify Docker storage
+      command: docker info | grep "Docker Root Dir"
+      register: docker_root
+      changed_when: false
 
-    - name: Open Jenkins port (3000) in firewall
-      ufw:
-        rule: allow
-        port: '3000'
-        proto: tcp
-      ignore_errors: yes
-      become: true
+    - name: Verify Jenkins home
+      command: grep JENKINS_HOME /etc/default/jenkins
+      register: jenkins_home
+      changed_when: false
 
-    - name: Open SSH port (22) in firewall
-      ufw:
-        rule: allow
-        port: '22'
-        proto: tcp
-      ignore_errors: yes
-      become: true
+    - name: Show installation results
+      debug:
+        msg:
+          - "Docker Root: {{ docker_root.stdout }}"
+          - "Jenkins Home: {{ jenkins_home.stdout }}"
+          - "Docker Compose: /mnt/bin/docker-compose"
+          - "Jenkins URL: http://{{ ansible_host }}:8080"
 
-    - name: Open port (9090) in firewall
-      ufw:
-        rule: allow
-        port: '9090'
-        proto: tcp
-      ignore_errors: yes
-      become: true
-
-    - name: Reload ufw
-      command: ufw reload
-      ignore_errors: yes
-
-    # Jenkins initial setup
-    - name: Get initial admin password from new location
+    - name: Get Jenkins admin password
       command: cat /mnt/jenkins/secrets/initialAdminPassword
       register: jenkins_password
       changed_when: false
       ignore_errors: yes
 
-    - name: Fallback to check default location for initial password
-      command: cat /var/lib/jenkins/secrets/initialAdminPassword
-      register: jenkins_password_fallback
-      changed_when: false
-      ignore_errors: yes
-      when: jenkins_password.stdout == ""
-
-    - name: Print Jenkins initial admin password
+    - name: Display Jenkins password
       debug:
-        msg: "Jenkins initial admin password: {{ (jenkins_password.stdout != '') | ternary(jenkins_password.stdout, jenkins_password_fallback.stdout) }}"
-      when: jenkins_password.stdout != "" or jenkins_password_fallback.stdout != ""
+        msg: "Initial Admin Password: {{ jenkins_password.stdout }}"
+      when: jenkins_password.stdout != ""
 
-    - name: Print Jenkins URL 
-      debug:
-        msg: "Jenkins URL: http://{{ ansible_host }}:8080"
-      when: jenkins_password.stdout != "" or jenkins_password_fallback.stdout != ""
+  handlers:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
