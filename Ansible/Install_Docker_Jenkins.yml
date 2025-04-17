@@ -8,7 +8,28 @@
       apt:
         update_cache: yes
 
-    # Docker Installation
+    # Docker Installation on /mnt
+    - name: Create /mnt directories structure
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      with_items:
+        - /mnt/docker
+        - /mnt/bin
+
+    - name: Stop Docker service if running
+      service:
+        name: docker
+        state: stopped
+      ignore_errors: yes
+
+    - name: Move existing Docker data to /mnt
+      command: mv /var/lib/docker /mnt/docker
+      args:
+        removes: /var/lib/docker
+      ignore_errors: yes
+
     - name: Install required packages to allow apt over HTTPS
       apt:
         name: apt-transport-https
@@ -31,11 +52,78 @@
         state: present
         update_cache: yes
     
+    - name: Configure Docker daemon to use /mnt/docker
+      copy:
+        dest: /etc/docker/daemon.json
+        content: |
+          {
+            "data-root": "/mnt/docker"
+          }
+
     - name: Install Docker-Compose
       ansible.builtin.get_url:
         url: "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-linux-x86_64"
-        dest: "/usr/local/bin/docker-compose"
-        mode: "0755"  # Makes it executable
+        dest: "/mnt/bin/docker-compose"
+        mode: "0755"
+
+    - name: Create symlink for docker-compose
+      file:
+        src: /mnt/bin/docker-compose
+        dest: /usr/local/bin/docker-compose
+        state: link
+        force: yes
+
+    # Jenkins Installation on /mnt
+    - name: Install Java (required by Jenkins)
+      apt:
+        name: openjdk-17-jre
+        state: present
+
+    - name: Add Jenkins repository key
+      apt_key:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+        state: present
+
+    - name: Add Jenkins repository to apt sources
+      apt_repository:
+        repo: deb https://pkg.jenkins.io/debian-stable binary/
+        state: present
+
+    - name: Create Jenkins home directory on /mnt
+      file:
+        path: /mnt/jenkins
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: '0755'
+
+    - name: Update Jenkins home directory configuration
+      lineinfile:
+        path: /etc/default/jenkins
+        regexp: "^JENKINS_HOME="
+        line: "JENKINS_HOME=/mnt/jenkins"
+        state: present
+
+    - name: Create systemd override for Jenkins
+      block:
+        - name: Create override directory
+          file:
+            path: /etc/systemd/system/jenkins.service.d
+            state: directory
+            
+        - name: Add override configuration
+          copy:
+            dest: /etc/systemd/system/jenkins.service.d/override.conf
+            content: |
+              [Service]
+              Environment="JENKINS_HOME=/mnt/jenkins"
+              WorkingDirectory=/mnt/jenkins
+
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
+        update_cache: yes
 
     - name: Add Jenkins user to docker group
       ansible.builtin.user:
@@ -55,55 +143,26 @@
         state: started
         enabled: yes
 
-    # Jenkins Installation
-    - name: Install Java (required by Jenkins)
-      apt:
-        name: openjdk-17-jre  # Or a later version
-        state: present
-
-    - name: Add Jenkins repository key
-      apt_key:
-        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
-        state: present
-
-    - name: Add Jenkins repository to apt sources
-      apt_repository:
-        repo: deb https://pkg.jenkins.io/debian-stable binary/
-        state: present
-
-    - name: Install Jenkins
-      apt:
-        name: jenkins
-        state: present
-        update_cache: yes
-
     - name: Start Jenkins service
       service:
         name: jenkins
         state: started
         enabled: yes
 
-   
-
-    - name: add user jenkins in docker group then restart jenkins 
-      user:
-        name: jenkins
-        groups: docker
-        append: yes
-    
-    - name: Restart Jenkins service
+    - name: Restart Jenkins service (to apply all changes)
       service:
         name: jenkins
         state: restarted
         enabled: yes
-      
+
+    # Firewall configuration
     - name: Enable ufw
       ufw:
         state: enabled
       ignore_errors: yes
       become: true
 
-    - name: Open Jenkins port (8080) in firewall (if ufw is enabled)
+    - name: Open Jenkins port (8080) in firewall
       ufw:
         rule: allow
         port: '8080'
@@ -111,7 +170,7 @@
       ignore_errors: yes
       become: true
 
-    - name: Open Jenkins port (3000) in firewall (if ufw is enabled)
+    - name: Open Jenkins port (3000) in firewall
       ufw:
         rule: allow
         port: '3000'
@@ -119,7 +178,7 @@
       ignore_errors: yes
       become: true
 
-    - name: Open Jenkins port (22) in firewall (if ufw is enabled)
+    - name: Open SSH port (22) in firewall
       ufw:
         rule: allow
         port: '22'
@@ -127,7 +186,7 @@
       ignore_errors: yes
       become: true
 
-    - name: Open Jenkins port (9090) in firewall (if ufw is enabled)
+    - name: Open port (9090) in firewall
       ufw:
         rule: allow
         port: '9090'
@@ -139,19 +198,26 @@
       command: ufw reload
       ignore_errors: yes
 
-
-    
-    - name: Get /var/lib/jenkins/secrets/initialAdminPassword
-      command: cat /var/lib/jenkins/secrets/initialAdminPassword
+    # Jenkins initial setup
+    - name: Get initial admin password from new location
+      command: cat /mnt/jenkins/secrets/initialAdminPassword
       register: jenkins_password
       changed_when: false
+      ignore_errors: yes
+
+    - name: Fallback to check default location for initial password
+      command: cat /var/lib/jenkins/secrets/initialAdminPassword
+      register: jenkins_password_fallback
+      changed_when: false
+      ignore_errors: yes
+      when: jenkins_password.stdout == ""
 
     - name: Print Jenkins initial admin password
       debug:
-        msg: "Jenkins initial admin password: {{ jenkins_password.stdout }}"
-      when: jenkins_password.stdout != ""
+        msg: "Jenkins initial admin password: {{ (jenkins_password.stdout != '') | ternary(jenkins_password.stdout, jenkins_password_fallback.stdout) }}"
+      when: jenkins_password.stdout != "" or jenkins_password_fallback.stdout != ""
 
     - name: Print Jenkins URL 
       debug:
         msg: "Jenkins URL: http://{{ ansible_host }}:8080"
-      when: jenkins_password.stdout != ""
+      when: jenkins_password.stdout != "" or jenkins_password_fallback.stdout != ""
