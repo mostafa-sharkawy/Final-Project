@@ -110,7 +110,7 @@ resource "aws_security_group" "web_sg" {
 
 resource "aws_instance" "web-server-instance" {
   ami                    = var.ami_id
-  instance_type          = "t3.medium"
+  instance_type          = "c3.large"
   key_name               = aws_key_pair.main.key_name
   subnet_id              = aws_subnet.subnet.id
   vpc_security_group_ids = [aws_security_group.web_sg.id]
