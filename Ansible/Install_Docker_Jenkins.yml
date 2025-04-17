@@ -17,19 +17,47 @@
       with_items:
         - /mnt/docker
         - /mnt/bin
+        - /mnt/jenkins  # Create directory first without user ownership
 
-    - name: Stop Docker service if running
-      service:
-        name: docker
-        state: stopped
-      ignore_errors: yes
+    # Jenkins Installation
+    - name: Install Java (required by Jenkins)
+      apt:
+        name: openjdk-17-jre
+        state: present
 
-    - name: Move existing Docker data to /mnt
-      command: mv /var/lib/docker /mnt/docker
-      args:
-        removes: /var/lib/docker
-      ignore_errors: yes
+    - name: Add Jenkins repository key
+      apt_key:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+        state: present
 
+    - name: Add Jenkins repository to apt sources
+      apt_repository:
+        repo: deb https://pkg.jenkins.io/debian-stable binary/
+        state: present
+
+    - name: Install Jenkins (this creates the jenkins user)
+      apt:
+        name: jenkins
+        state: present
+        update_cache: yes
+
+    # Now that jenkins user exists, set proper permissions
+    - name: Set correct permissions for Jenkins home
+      file:
+        path: /mnt/jenkins
+        owner: jenkins
+        group: jenkins
+        mode: '0755'
+
+    - name: Update Jenkins home directory configuration
+      lineinfile:
+        path: /etc/default/jenkins
+        regexp: "^JENKINS_HOME="
+        line: "JENKINS_HOME=/mnt/jenkins"
+        state: present
+
+    # Rest of your Docker and system configuration...
+    # [Keep all your existing tasks below exactly as they were]
     - name: Install required packages to allow apt over HTTPS
       apt:
         name: apt-transport-https
@@ -72,58 +100,6 @@
         dest: /usr/local/bin/docker-compose
         state: link
         force: yes
-
-    # Jenkins Installation on /mnt
-    - name: Install Java (required by Jenkins)
-      apt:
-        name: openjdk-17-jre
-        state: present
-
-    - name: Add Jenkins repository key
-      apt_key:
-        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
-        state: present
-
-    - name: Add Jenkins repository to apt sources
-      apt_repository:
-        repo: deb https://pkg.jenkins.io/debian-stable binary/
-        state: present
-
-    - name: Create Jenkins home directory on /mnt
-      file:
-        path: /mnt/jenkins
-        state: directory
-        owner: jenkins
-        group: jenkins
-        mode: '0755'
-
-    - name: Update Jenkins home directory configuration
-      lineinfile:
-        path: /etc/default/jenkins
-        regexp: "^JENKINS_HOME="
-        line: "JENKINS_HOME=/mnt/jenkins"
-        state: present
-
-    - name: Create systemd override for Jenkins
-      block:
-        - name: Create override directory
-          file:
-            path: /etc/systemd/system/jenkins.service.d
-            state: directory
-            
-        - name: Add override configuration
-          copy:
-            dest: /etc/systemd/system/jenkins.service.d/override.conf
-            content: |
-              [Service]
-              Environment="JENKINS_HOME=/mnt/jenkins"
-              WorkingDirectory=/mnt/jenkins
-
-    - name: Install Jenkins
-      apt:
-        name: jenkins
-        state: present
-        update_cache: yes
 
     - name: Add Jenkins user to docker group
       ansible.builtin.user:
