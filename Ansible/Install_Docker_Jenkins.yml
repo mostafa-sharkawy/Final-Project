@@ -127,6 +127,14 @@
       ignore_errors: yes
       become: true
 
+    - name: Open Jenkins port (9090) in firewall (if ufw is enabled)
+      ufw:
+        rule: allow
+        port: '9090'
+        proto: tcp
+      ignore_errors: yes
+      become: true
+
     - name: Reload ufw
       command: ufw reload
       ignore_errors: yes
