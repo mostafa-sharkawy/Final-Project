@@ -8,7 +8,7 @@ This project aims to automate the deployment of a Dockerized Word Press applicat
 
 Diagram
 
-https://drive.google.com/file/d/1ka9fgN59AafgxxTKhbEos_T-TZsicoej/view?usp=sharing
+![Logo](https://drive.google.com/file/d/1ka9fgN59AafgxxTKhbEos_T-TZsicoej/view?usp=drive_link)
 
 1.	Terraform build infrastructure VPC, Public subnet , EC2.
 2.	Ansible pushes configuration on EC2 to install Jenkins and Docker. 
