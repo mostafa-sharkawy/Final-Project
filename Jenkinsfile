@@ -10,15 +10,51 @@ pipeline {
     }
 
     stages {
-        stage('Setup test environment') {
+        stage('Setup environment') {
             steps {
-                echo "📦 Bringing up the test environment..."
+                echo "🚀 Setting up environment with Prometheus monitoring..."
                 sh '''
-                # 1. Force remove specific containers if they exist
-                docker rm -f mysql_db wordpress_app wp_cli 2>/dev/null || true
-                
+                # Clean up existing containers
+                docker rm -f mysql_db wordpress_app wp_cli prometheus 2>/dev/null || true
+
+                # Start Prometheus
+                docker run -d \
+                  --name prometheus \
+                  -p 9090:9090 \
+                  -e "TZ=UTC" \
+                  prom/prometheus \
+                  --config.file=/etc/prometheus/prometheus.yml
+
+                # Start application stack
                 docker-compose up -d
                 '''
+            }
+        }
+
+        stage('Configure Prometheus') {
+            steps {
+                script {
+                    echo "🔧 Configuring Prometheus to monitor WordPress..."
+                    
+                    sh '''
+                    docker exec prometheus sh -c 'cat <<EOT > /etc/prometheus/prometheus.yml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "wordpress"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["wordpress_app:80"]
+EOT'
+                    '''
+
+                    sh 'docker exec prometheus kill -HUP 1'
+                }
             }
         }
 
@@ -33,7 +69,7 @@ pipeline {
                             echo "✅ WordPress is ready!"
                             break
                         } catch (Exception e) {
-                            echo "Attempt ${attempt}: WordPress not ready yet, waiting..."
+                            echo "Attempt ${attempt}: WordPress not ready yet..."
                             sleep time: 10, unit: 'SECONDS'
                             attempt++
                         }
@@ -217,7 +253,7 @@ pipeline {
         stage('Tear Down Test Environment') {
             steps {
                 echo "🧹 Tearing down test environment..."
-                sh 'docker compose down'
+                sh 'docker-compose down'
             }
         }
 
@@ -238,6 +274,7 @@ pipeline {
 
                     echo "✅ Deployment to production completed."
                     echo "🌐 Production Site URL: http://${publicIP}:3000"
+                    echo "📊 Prometheus Monitoring: http://${publicIP}:9090"
                 }
             }
         }
@@ -245,30 +282,39 @@ pipeline {
 
     post {
         success {
-            echo "Cleaning up workspace and Docker images..."
+            echo "🧹 Cleaning up workspace..."
             sh "docker system prune -f"
             echo "🎉 Pipeline completed successfully!"
             script {
+                def publicIP = sh(returnStdout: true, script: '''
+                    TOKEN=$(curl -sX PUT "http://169.254.169.254/latest/api/token" \\
+                        -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+                    curl -sH "X-aws-ec2-metadata-token: $TOKEN" \\
+                        http://169.254.169.254/latest/meta-data/public-ipv4
+                ''').trim()
+
                 slackSend(
                     channel: "${SLACK_CHANNEL}",
                     color: 'good',
-                    message: "🚀 WordPress Deployment Successful"
+                    message: """🚀 WordPress Deployment Successful
+• Site URL: http://${publicIP}:3000
+• Admin Panel: http://${publicIP}:3000/wp-admin
+• Monitoring: http://${publicIP}:9090
+• Admin Credentials: devops/team"""
                 )
             }
+            cleanWs()
         }
         
         failure {
-            echo "🚨 Pipeline failed. Check logs for more info."
+            echo "❌ Pipeline failed"
             script {
                 slackSend(
                     channel: "${SLACK_CHANNEL}",
                     color: 'danger',
-                    message: "❌ WordPress Deployment Failed"
+                    message: "🔥 Deployment Failed\nCheck logs: ${env.BUILD_URL}"
                 )
             }
-        }
-        
-        always {
             cleanWs()
         }
     }
