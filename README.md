@@ -16,8 +16,11 @@ This ensures consistent deployments and eliminates manual processes.
 
 Prerequisites
 •	AWS account and AWS cli
+
 •	Ansible installed on local server
+
 •	Terraform installed on local server
+
 •	GitHub repository with Dockerized application code
 
 Infrastructure Setup Instructions
