@@ -9,8 +9,8 @@
 - Diagram
 
 ![Logo](Terraform/logo.jpeg)
-![Logo](Terraform/app.jpeg)
-![Logo](Terraform/net.jpeg)
+
+
 
 1.	Terraform build infrastructure VPC, Public subnet , EC2.
 2.	Ansible pushes configuration on EC2 to install Jenkins and Docker. 
@@ -41,34 +41,34 @@ chmod +x deploy.sh
 
 ./deploy.sh
 
-Deployment Script steps:
+### Deployment Script steps:
 
-Initializing Terraform Resources:
+### Initializing Terraform Resources:
 
-Applying Terraform Resources:
+### Applying Terraform Resources:
 
 •	The inventory file is automatically updated with the EC2 instance IP
 •	A private key (mykey.pem) is generated for secure EC2 access
 
-Configure SSH Access:
+### Configure SSH Access:
 
 Update inventory files (Hosts file) which is located inside ansible directory and my key file created by terraform is redirected to ansible directory.
 
-Runing Ansible playbook
+### Runing Ansible playbook
 Install Docker
 Install Jenkins
 Configure ports
 
-Pipeline prerequisites:
+### Pipeline prerequisites:
 
-Configure Jenkins Server
+### Configure Jenkins Server
 A-Install slack+sonar+blue ocean plugins
 B-Configure slack, sonar and webhook on system jenkins.
-On system Jenkins:
+### On system Jenkins:
 1- Configure Webhook: Manage push commits to trigger pipeline
 2- Configure SonarQube: To analysis the code pipeline
 3- Configure Slack: To integrate notifications from Jenkins to slack
-Pipeline stages:
+### Pipeline stages:
 •	Set up test environment
 •	Wait for WordPress
 •	Install WordPress if not installed 
@@ -78,11 +78,13 @@ Pipeline stages:
 •	Tear Down Test environment
 •	Deploy to Production
 Check our Application
- 
+ ![Logo](Terraform/app.PNG)
 Build Status Notification
+ ![Logo](Terraform/net.jpeg)
  
-Final Part
-Destroy it 
+### Final Part
+
+## Destroy it 
 This will:
 1. Run 'terraform destroy' on: /home/Final-Project/Terraform
 2. Remove sensitive files including:
@@ -98,18 +100,10 @@ Removing: /home/Final-Project/Ansible/mykey.pem
 =============================================
 Verification:
 Checking for remaining sensitive files...
-Technologies and Tools Used
+## Technologies and Tools Used
 
-Tool	Use Case
-Docker	Containerization of applications for consistent environments across different systems.
-Docker Compose	Defining and running multi-container Docker applications using a single configuration file.
-Ansible	Automating software provisioning, configuration management, and application deployment.
-Jenkins	Automating building, testing, and deploying code in CI/CD pipelines.
-Terraform	Automating the provisioning of infrastructure resources across cloud platforms.
-SonarQube	is a static application security testing (SAST) tool that analyzes source code for bugs, vulnerabilities, and code smells before deployment.
-Prometheus	open-source monitoring and alerting toolkit, to monitor our application.
 
-Team Members
+### Team Members
 
 •	Mostafa Naeem AbdElazeim
 
