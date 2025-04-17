@@ -49,7 +49,7 @@ scrape_configs:
   - job_name: "wordpress"
     metrics_path: "/metrics"
     static_configs:
-      - targets: ["3.249.12.29:3000"]
+      - targets: ["localhost:3000"]
 EOT'
                     '''
 
