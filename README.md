@@ -102,7 +102,7 @@ Removing: /home/Final-Project/Ansible/mykey.pem
 Verification:
 Checking for remaining sensitive files...
 ## Technologies and Tools Used
-
+ ![Logo](Terraform/table.PNG)
 
 ### Team Members
 
