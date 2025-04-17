@@ -3,6 +3,7 @@ DEPI DevOps Final Project
 Automated Deployment Pipeline with Jenkins and Docker
 
 Project Overview
+
 This project aims to automate the deployment of a Dockerized Word Press application on an AWS EC2 instance using Jenkins, Ansible, Terraform and Docker. It follows these steps:
 
 Diagram
@@ -15,6 +16,7 @@ Diagram
 This ensures consistent deployments and eliminates manual processes.
 
 Prerequisites
+
 •	AWS account and AWS cli
 
 •	Ansible installed on local server
@@ -24,25 +26,37 @@ Prerequisites
 •	GitHub repository with Dockerized application code
 
 Infrastructure Setup Instructions
+
 Clone the Repository:
+
 git clone https://github.com/mostafa-sharkawy/Final-Project.git
+
 cd Final-Project/
+
 chmod +x deploy.sh
+
 ./deploy.sh
+
 Deployment Script steps:
+
 Initializing Terraform Resources:
+
 Applying Terraform Resources:
+
 •	The inventory file is automatically updated with the EC2 instance IP
 •	A private key (mykey.pem) is generated for secure EC2 access
 
 Configure SSH Access:
+
 Update inventory files (Hosts file) which is located inside ansible directory and my key file created by terraform is redirected to ansible directory.
 
 Runing Ansible playbook
 Install Docker
 Install Jenkins
 Configure ports
+
 Pipeline prerequisites:
+
 Configure Jenkins Server
 A-Install slack+sonar+blue ocean plugins
 B-Configure slack, sonar and webhook on system jenkins.
@@ -92,10 +106,15 @@ SonarQube	is a static application security testing (SAST) tool that analyzes sou
 Prometheus	open-source monitoring and alerting toolkit, to monitor our application.
 
 Team Members
+
 •	Mostafa Naeem AbdElazeim
+
 •	Sarah Salah Abdelghany
+
 •	Zeyad Gamal Ahmed
+
 •	Mahmoud Samy Mohamed
+
 •	Mohrabil Atef Atteya Rizkallah
 
 This README serves as a complete guide to understanding the project structure, setting up infrastructure, and configuring the Jenkins pipeline. It ensures a seamless deployment process with automation, notifications, and effective infrastructure management.
