@@ -5,40 +5,42 @@
 
   tasks:
     # =====================
-    # 1. PREPARE /mnt STRUCTURE
+    # 1. DIRECTORY SETUP (Combined)
     # =====================
-    - name: Create /mnt directories
+    - name: Create all required directories
       file:
         path: "{{ item }}"
         state: directory
         mode: '0755'
       with_items:
-        - /mnt/docker           # Docker containers/volumes
-        - /mnt/jenkins          # Jenkins home
-        - /mnt/bin              # For Docker Compose binary
-        - /mnt/docker-config    # Docker config files
+        - /mnt/docker
+        - /mnt/jenkins
+        - /mnt/bin
+        - /etc/docker
+        - /mnt/docker-config  # From second playbook
 
     # =====================
-    # 2. JENKINS INSTALLATION (/mnt)
+    # 2. JENKINS INSTALLATION (Enhanced)
     # =====================
-    - name: Install Java (Jenkins dependency)
+    - name: Install Java
       apt:
         name: openjdk-17-jre
         state: present
 
-    - name: Add Jenkins repository
-      apt_key:
-        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
-        state: present
+    - name: Configure Jenkins repository
+      block:
+        - name: Add Jenkins repository key
+          apt_key:
+            url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+            state: present
+
+        - name: Add Jenkins repository
+          apt_repository:
+            repo: "deb https://pkg.jenkins.io/debian-stable binary/"
+            state: present
       notify: Update apt cache
 
-    - name: Add Jenkins repo to sources
-      apt_repository:
-        repo: "deb https://pkg.jenkins.io/debian-stable binary/"
-        state: present
-      notify: Update apt cache
-
-    - name: Pre-configure Jenkins for /mnt
+    - name: Pre-configure Jenkins (from second playbook)
       copy:
         dest: /etc/default/jenkins
         content: |
@@ -52,7 +54,7 @@
         state: present
         update_cache: yes
 
-    - name: Set Jenkins permissions
+    - name: Set Jenkins permissions (recurse added from first playbook)
       file:
         path: /mnt/jenkins
         owner: jenkins
@@ -61,7 +63,7 @@
         recurse: yes
 
     # =====================
-    # 3. DOCKER INSTALLATION (/mnt)
+    # 3. DOCKER INSTALLATION (Enhanced)
     # =====================
     - name: Install Docker dependencies
       apt:
@@ -73,18 +75,20 @@
           - software-properties-common
         state: present
 
-    - name: Add Docker GPG key
-      apt_key:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
+    - name: Configure Docker repository
+      block:
+        - name: Add Docker GPG key
+          apt_key:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            state: present
 
-    - name: Add Docker repository
-      apt_repository:
-        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
-        state: present
+        - name: Add Docker repository
+          apt_repository:
+            repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+            state: present
       notify: Update apt cache
 
-    - name: Configure Docker for /mnt
+    - name: Configure Docker storage (from both playbooks)
       copy:
         dest: /etc/docker/daemon.json
         content: |
@@ -93,7 +97,7 @@
             "storage-driver": "overlay2"
           }
 
-    - name: Install Docker components
+    - name: Install Docker components (expanded from second playbook)
       apt:
         name:
           - docker-ce
@@ -103,25 +107,25 @@
         update_cache: yes
 
     # =====================
-    # 4. DOCKER COMPOSE (/mnt)
+    # 4. DOCKER COMPOSE (Enhanced)
     # =====================
-    - name: Install Docker Compose to /mnt
+    - name: Install Docker Compose
       get_url:
         url: "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-linux-x86_64"
         dest: "/mnt/bin/docker-compose"
         mode: "0755"
 
-    - name: Create symlink for docker-compose
+    - name: Create docker-compose symlink
       file:
-        src: /mnt/bin/docker-compose
-        dest: /usr/local/bin/docker-compose
+        src: "/mnt/bin/docker-compose"
+        dest: "/usr/local/bin/docker-compose"
         state: link
         force: yes
 
     # =====================
-    # 5. FINAL CONFIGURATION
+    # 5. USER & SYSTEM CONFIGURATION (Combined)
     # =====================
-    - name: Add users to docker group
+    - name: Configure user permissions
       user:
         name: "{{ item }}"
         groups: docker
@@ -130,14 +134,14 @@
         - jenkins
         - "{{ ansible_user }}"
 
-    - name: Create systemd override for Jenkins
+    - name: Configure Jenkins systemd (from both playbooks)
       block:
         - name: Create override directory
           file:
             path: /etc/systemd/system/jenkins.service.d
             state: directory
 
-        - name: Add override config
+        - name: Add systemd override
           copy:
             dest: /etc/systemd/system/jenkins.service.d/override.conf
             content: |
@@ -150,21 +154,21 @@
         daemon_reload: yes
 
     # =====================
-    # 6. START SERVICES
+    # 6. SERVICE MANAGEMENT (Enhanced)
     # =====================
-    - name: Enable and start services
+    - name: Ensure services are running
       service:
-        name: "{{ item }}"
-        state: restarted
+        name: "{{ item.name }}"
+        state: "{{ item.state }}"
         enabled: yes
       with_items:
-        - docker
-        - jenkins
+        - { name: docker, state: restarted }  # From second playbook
+        - { name: jenkins, state: restarted }
 
     # =====================
-    # 7. FIREWALL CONFIG
+    # 7. FIREWALL CONFIG (Combined)
     # =====================
-    - name: Configure firewall
+    - name: Configure firewall rules
       ufw:
         rule: allow
         port: "{{ item }}"
@@ -175,41 +179,52 @@
         - 3000
         - 9090
 
-    - name: Enable firewall
+    - name: Enable firewall with secure defaults
       ufw:
         state: enabled
         policy: deny
 
     # =====================
-    # 8. VERIFICATION
+    # 8. VERIFICATION & OUTPUT (Enhanced)
     # =====================
-    - name: Verify Docker storage
-      command: docker info | grep "Docker Root Dir"
-      register: docker_root
-      changed_when: false
+    - name: Verify installations
+      block:
+        - name: Check Docker configuration
+          command: docker info | grep -E "Docker Root Dir|Storage Driver"
+          register: docker_info
+          changed_when: false
 
-    - name: Verify Jenkins home
-      command: grep JENKINS_HOME /etc/default/jenkins
-      register: jenkins_home
-      changed_when: false
+        - name: Check Jenkins configuration
+          command: grep JENKINS_HOME /etc/default/jenkins
+          register: jenkins_home
+          changed_when: false
 
-    - name: Show installation results
-      debug:
-        msg:
-          - "Docker Root: {{ docker_root.stdout }}"
-          - "Jenkins Home: {{ jenkins_home.stdout }}"
-          - "Docker Compose: /mnt/bin/docker-compose"
-          - "Jenkins URL: http://{{ ansible_host }}:8080"
+        - name: Verify Docker Compose installation
+          command: docker-compose --version
+          register: compose_version
+          changed_when: false
 
-    - name: Get Jenkins admin password
+        - name: Display results
+          debug:
+            msg:
+              - "Docker Configuration:"
+              - "{{ docker_info.stdout_lines | join('\n') }}"
+              - "Jenkins Home: {{ jenkins_home.stdout }}"
+              - "Docker Compose: {{ compose_version.stdout }}"
+              - "Access URLs:"
+              - "Jenkins: http://{{ ansible_host }}:8080"
+              - "Docker metrics: http://{{ ansible_host }}:9323/metrics"
+      ignore_errors: yes
+
+    - name: Retrieve Jenkins admin password
       command: cat /mnt/jenkins/secrets/initialAdminPassword
       register: jenkins_password
       changed_when: false
       ignore_errors: yes
 
-    - name: Display Jenkins password
+    - name: Display initial credentials
       debug:
-        msg: "Initial Admin Password: {{ jenkins_password.stdout }}"
+        msg: "Jenkins Initial Admin Password: {{ jenkins_password.stdout }}"
       when: jenkins_password.stdout != ""
 
   handlers:
